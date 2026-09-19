@@ -1,0 +1,103 @@
+{
+  "checkedAt" : "2026-09-19T14:28:10Z",
+  "checks" : [
+    {
+      "detail" : "synthetic DOM contract, not current ChatGPT selectors",
+      "name" : "result-multiple-new-images-only",
+      "passed" : true
+    },
+    {
+      "detail" : "synthetic DOM contract, not current ChatGPT selectors",
+      "name" : "result-wrong-conversation-rejected",
+      "passed" : true
+    },
+    {
+      "detail" : "synthetic DOM contract, not current ChatGPT selectors",
+      "name" : "result-missing-response-rejected",
+      "passed" : true
+    },
+    {
+      "detail" : "synthetic DOM contract, not current ChatGPT selectors",
+      "name" : "result-user-reference-rejected",
+      "passed" : true
+    },
+    {
+      "detail" : "synthetic DOM contract, not current ChatGPT selectors",
+      "name" : "result-url-token-change-still-old-file",
+      "passed" : true
+    },
+    {
+      "detail" : "synthetic DOM contract, not current ChatGPT selectors",
+      "name" : "result-generation-active-rejected",
+      "passed" : true
+    },
+    {
+      "detail" : "synthetic DOM contract, not current ChatGPT selectors",
+      "name" : "result-incomplete-decode-rejected",
+      "passed" : true
+    },
+    {
+      "detail" : "synthetic DOM contract, not current ChatGPT selectors",
+      "name" : "result-progressive-url-not-settled",
+      "passed" : true
+    },
+    {
+      "detail" : "",
+      "name" : "single-png-unicode-filename",
+      "passed" : true
+    },
+    {
+      "detail" : "",
+      "name" : "multiple-png-jpeg-exact-bytes",
+      "passed" : true
+    },
+    {
+      "detail" : "",
+      "name" : "same-references-reused",
+      "passed" : true
+    },
+    {
+      "detail" : "",
+      "name" : "three-webviews-independent-attachments",
+      "passed" : true
+    },
+    {
+      "detail" : "",
+      "name" : "missing-file-fails-closed",
+      "passed" : true
+    },
+    {
+      "detail" : "",
+      "name" : "cancelled-file-selection-empty",
+      "passed" : true
+    },
+    {
+      "detail" : "",
+      "name" : "minimized-file-attachment",
+      "passed" : true
+    },
+    {
+      "detail" : "",
+      "name" : "hidden-file-attachment",
+      "passed" : true
+    },
+    {
+      "detail" : "ticks=10; only local short-duration evidence",
+      "name" : "hidden-timer-10-seconds",
+      "passed" : true
+    },
+    {
+      "detail" : "local Blob download, not authenticated ChatGPT download",
+      "name" : "wkdownload-blob-original-bytes",
+      "passed" : true
+    },
+    {
+      "detail" : "",
+      "name" : "probe-completed",
+      "passed" : true
+    }
+  ],
+  "os" : "Version 27.2 (Build 26B5086k)",
+  "passed" : true,
+  "scope" : "offline-local-WebKit-fixture; no ChatGPT requests"
+}

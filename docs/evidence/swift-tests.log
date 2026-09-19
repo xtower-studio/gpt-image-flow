@@ -1,0 +1,46 @@
+Building for debugging...
+[Planning deferred tasks]
+[17 / 33]
+[19 / 35] PreflightCore
+[30 / 44] PreflightCore
+[37 / 52] ImageFlowProbe-product
+[39 / 52] JournalProbe-product
+[43 / 54] JournalProbe-product
+[49 / 57] PreflightCoreTests-product
+[53 / 57] PreflightCoreTests-product
+Build complete! (1.53초)
+Test Suite 'All tests' started at 2026-09-19 23:27:53.528.
+Test Suite 'PreflightCoreTests.xctest' started at 2026-09-19 23:27:53.528.
+Test Suite 'PreflightTests' started at 2026-09-19 23:27:53.528.
+Test Case '-[PreflightCoreTests.PreflightTests testAtomicResultRecoveryAndCorruption]' started.
+Test Case '-[PreflightCoreTests.PreflightTests testAtomicResultRecoveryAndCorruption]' passed (0.004 seconds).
+Test Case '-[PreflightCoreTests.PreflightTests testBatchBounds]' started.
+Test Case '-[PreflightCoreTests.PreflightTests testBatchBounds]' passed (0.000 seconds).
+Test Case '-[PreflightCoreTests.PreflightTests testConcurrentClaimsCannotOverbook]' started.
+Test Case '-[PreflightCoreTests.PreflightTests testConcurrentClaimsCannotOverbook]' passed (0.000 seconds).
+Test Case '-[PreflightCoreTests.PreflightTests testDuplicateJobAndStaleCompletionCannotSubmitOrRelease]' started.
+Test Case '-[PreflightCoreTests.PreflightTests testDuplicateJobAndStaleCompletionCannotSubmitOrRelease]' passed (0.001 seconds).
+Test Case '-[PreflightCoreTests.PreflightTests testEcoAndModeReductionDoNotCancelRunningJobs]' started.
+Test Case '-[PreflightCoreTests.PreflightTests testEcoAndModeReductionDoNotCancelRunningJobs]' passed (0.000 seconds).
+Test Case '-[PreflightCoreTests.PreflightTests testPauseRetainsActiveSlotsAndRequiresExplicitResume]' started.
+Test Case '-[PreflightCoreTests.PreflightTests testPauseRetainsActiveSlotsAndRequiresExplicitResume]' passed (0.000 seconds).
+Test Case '-[PreflightCoreTests.PreflightTests testSavedGateRestoresPacingAndRequiresReconciliation]' started.
+Test Case '-[PreflightCoreTests.PreflightTests testSavedGateRestoresPacingAndRequiresReconciliation]' passed (0.000 seconds).
+Test Case '-[PreflightCoreTests.PreflightTests testSpacingClampsBothEnds]' started.
+Test Case '-[PreflightCoreTests.PreflightTests testSpacingClampsBothEnds]' passed (0.000 seconds).
+Test Case '-[PreflightCoreTests.PreflightTests testSwiftDataExplicitSaveAndReopen]' started.
+Test Case '-[PreflightCoreTests.PreflightTests testSwiftDataExplicitSaveAndReopen]' passed (0.017 seconds).
+Test Case '-[PreflightCoreTests.PreflightTests testThreeSlotsWithAccountWideSpacing]' started.
+Test Case '-[PreflightCoreTests.PreflightTests testThreeSlotsWithAccountWideSpacing]' passed (0.000 seconds).
+Test Case '-[PreflightCoreTests.PreflightTests testUncertainSubmissionNeverRequeues]' started.
+Test Case '-[PreflightCoreTests.PreflightTests testUncertainSubmissionNeverRequeues]' passed (0.001 seconds).
+Test Suite 'PreflightTests' passed at 2026-09-19 23:27:53.555.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.025 (0.026) seconds
+Test Suite 'PreflightCoreTests.xctest' passed at 2026-09-19 23:27:53.555.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.025 (0.026) seconds
+Test Suite 'All tests' passed at 2026-09-19 23:27:53.555.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.025 (0.027) seconds
+􀟈  Test run started.
+􀄵  Testing Library Version: 2084
+􀄵  Target Platform: arm64e-apple-macos14.0
+􁁛  Test run with 0 tests in 0 suites passed after 0.001 seconds.

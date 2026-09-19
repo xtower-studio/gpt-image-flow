@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "sourceRepository": "https://github.com/ManiacMike/chatgpt-endless-canvas",
+  "sourceCommit": "7783f02518d3d1878f3729e80b8499fb566d15e9",
+  "defaultConcurrency": 3,
+  "maximumConcurrency": 3,
+  "ecoConcurrency": 1,
+  "batchSizeLimit": 50,
+  "submissionSpacingMinimumSeconds": 30,
+  "submissionSpacingMaximumSeconds": 120,
+  "generationObservationTimeoutSeconds": 420,
+  "jobWatchdogSeconds": 500,
+  "automaticResubmission": false,
+  "spacingScope": "worker-after-completion",
+  "limitHandling": "pause-new-submissions-until-explicit-resume",
+  "evidenceClass": "upstream-operating-defaults-not-service-quota"
+}

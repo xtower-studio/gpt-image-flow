@@ -1,0 +1,99 @@
+{
+  "recordedAtUTC": "2026-09-19T15:15:21.807575+00:00",
+  "product": "Image Flow 0.1 local alpha",
+  "actualGenerations": {
+    "noReference": 1,
+    "singleReferenceEdit": 1,
+    "twoReferenceBatch": 3,
+    "saved": 5
+  },
+  "recovery": {
+    "originalConversationCollectedWithoutResubmission": true,
+    "jobsAfterRestart": 5,
+    "assetsAfterRestart": 5,
+    "favoritesAfterRestart": 1,
+    "lastProjectRestored": true,
+    "sessionRestored": true
+  },
+  "idle": {
+    "workerWebViews": 0,
+    "connectionBrowserLoaded": false,
+    "hostRSSObservationKiB": 150864,
+    "hostCPUObservationPercent": 0.0,
+    "includesWebKitSubprocesses": false
+  },
+  "export": {
+    "images": [
+      {
+        "file": "01-시안 1.png",
+        "bytes": 1935709,
+        "width": 1254,
+        "height": 1254,
+        "hashMatches": true
+      },
+      {
+        "file": "02-시안 1.png",
+        "bytes": 1882713,
+        "width": 1254,
+        "height": 1254,
+        "hashMatches": true
+      },
+      {
+        "file": "03-시안 1.png",
+        "bytes": 2039195,
+        "width": 1374,
+        "height": 1145,
+        "hashMatches": true
+      },
+      {
+        "file": "04-시안 2.png",
+        "bytes": 2026519,
+        "width": 1254,
+        "height": 1254,
+        "hashMatches": true
+      },
+      {
+        "file": "05-시안 3.png",
+        "bytes": 2067963,
+        "width": 1254,
+        "height": 1254,
+        "hashMatches": true
+      }
+    ],
+    "jobs": 5
+  },
+  "automatedTests": {
+    "passed": 12,
+    "failed": 0,
+    "log": "local .runtime/tests.log"
+  },
+  "sourceSHA256": {
+    "Sources/FlowCore/AssetVault.swift": "231a7cd14cdd8cbba67abe49e9229921d00dabfa9c803656acb95f7d609e6b51",
+    "Sources/FlowCore/JobRules.swift": "51ca904cb0cc5e21663c08d9940d5df0c225dd886dbee253c7dc5b073d35f863",
+    "Sources/FlowCore/Models.swift": "e99da12db11c1a47a4c4404887114763fbcbef9f6fda391ad93c85dce6b73d5a",
+    "Sources/ImageFlow/App/DevelopmentCommands.swift": "83a6b126999e28a5b90757c2b571444d4899f2ff767b8f48b00d23655392a4fe",
+    "Sources/ImageFlow/App/ImageFlowApp.swift": "a5ba8c8f61fe6b40cb9fec5e14751d2c378a46b84c574b821070fe2bc6c7a309",
+    "Sources/ImageFlow/Resources/chatgpt-adapter.js": "b82fb5ba886a4e3630c0dc822110f7ec4a68e71d0ec95bccd2619715710e13b2",
+    "Sources/ImageFlow/Services/ChatGPT/WebSession.swift": "6f3a4df593239cca94826d9760367869252801408ded2ed51af35dfd3e7295e8",
+    "Sources/ImageFlow/Services/ChatGPT/WebWorker.swift": "ecca0bf7e679b234d0ffd63fb78ef0958c6198c3763a0c98bdb6e8e2262560ce",
+    "Sources/ImageFlow/Services/Generation/GenerationEngine.swift": "f7386da3584e3a373af65162b90aac717093cd2d775f9ff07fafd79db4babebe",
+    "Sources/ImageFlow/Stores/LibraryPersistence.swift": "c40d4adb4d5ed2bf16121369ac60c10fe49280540e6b442d72a3c83af20f023b",
+    "Sources/ImageFlow/Stores/WorkspaceStore.swift": "11dcbe6ac994a205695eabf19468c87baee6499693a5dcace0f9bdca28316ef6",
+    "Sources/ImageFlow/Views/AssetThumbnail.swift": "ac36a0af60290283b53c4c4127125341ab115e0e7bc019d17f919c1d7b8f38a1",
+    "Sources/ImageFlow/Views/CompareView.swift": "70b7187b54327e11a353d39a08a480b0597a2a4c9c895e5008c66fa4c0f7479f",
+    "Sources/ImageFlow/Views/ComposerView.swift": "cc04365fb5935e43176b3dcb68adbb5c0b5c2418464b4679fde2dbe4d1b8c6f4",
+    "Sources/ImageFlow/Views/InspectorView.swift": "f3fb0b11cfd12b865c0289ca6d96a5c45be475f580c9a680954fd67d6a66bca2",
+    "Sources/ImageFlow/Views/QueueView.swift": "60029892020bc369d1ec8617a292b2c117926380fd0b3914228430ffc4f68253",
+    "Sources/ImageFlow/Views/SettingsView.swift": "b494cdbde16da2c7285ce49ade104952c1d61db0d8cb4bbdde7b7ce4c2a23aff",
+    "Sources/ImageFlow/Views/WorkspaceView.swift": "336e2e8ce8613651f2489da92acebbf5b7a8fb653feeede32e41b48653f36890",
+    "Tests/FlowCoreTests/AdapterTests.swift": "97dd0f64cee705724d2be84df30e13fb8cf806bfb80cacbe085c6ff7e6dae34e",
+    "Tests/FlowCoreTests/FlowCoreTests.swift": "5fc36c8887434357ad7ac07c0e7605842651bff3307573843b43d0406ee4dbbb",
+    "config/generation-policy.json": "46f320bac9e8ef7aeb83e1959b8ff565e6e5f6ca2515466ecec18c72283ef989"
+  },
+  "limits": [
+    "Single development Mac; no supported-OS matrix",
+    "No service concurrency ceiling or quota stress test",
+    "No complete UI automation or long-duration benchmark",
+    "Development bundle; not notarized"
+  ]
+}

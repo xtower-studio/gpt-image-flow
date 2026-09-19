@@ -1,0 +1,28 @@
+{
+  "navigation-qa": {
+    "spacePreview": true,
+    "shiftArrowSelectsTwo": true,
+    "commandASelectsFour": true,
+    "commandShiftCOpensComparison": true,
+    "commandFFocusesSearch": true
+  },
+  "draft-qa": {
+    "unicodeExact": true,
+    "inspectorReopen": true,
+    "testDraftCleared": true
+  },
+  "canvas-qa": {
+    "arrangeChangesLayout": true,
+    "commandZRestoresExactLayout": true
+  },
+  "drag-qa": {
+    "nativeFileDrag": true,
+    "textEditorDrop": true,
+    "noDuplicateAsset": true,
+    "referenceRestored": true
+  },
+  "doubleClickPreview": true,
+  "assets": 18,
+  "jobs": 19,
+  "dataPreserved": true
+}

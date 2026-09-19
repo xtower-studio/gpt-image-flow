@@ -1,0 +1,9 @@
+.DS_Store
+.research/
+.build/
+dist/
+.runtime/
+validation/.build/
+validation/output/
+*.xcuserstate
+xcuserdata/

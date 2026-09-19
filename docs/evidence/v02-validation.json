@@ -1,0 +1,107 @@
+{
+  "version": "0.2.0",
+  "recordedAtUTC": "2026-09-19T16:10:32.168665+00:00",
+  "tests": {
+    "passed": 20,
+    "failed": 0
+  },
+  "reasoningUI": [
+    {
+      "requested": 0,
+      "applied": 0,
+      "label": "Instant"
+    },
+    {
+      "requested": 1,
+      "applied": 1,
+      "label": "중간"
+    },
+    {
+      "requested": 2,
+      "applied": 2,
+      "label": "High"
+    },
+    {
+      "requested": 3,
+      "label": "매우 높음",
+      "applied": 3
+    },
+    {
+      "applied": 4,
+      "label": "6\nPro",
+      "requested": 4
+    }
+  ],
+  "parallel": {
+    "saved": 3,
+    "appliedLevels": [
+      0,
+      2,
+      4
+    ],
+    "simultaneousGeneratingSamples": 7,
+    "firstObserved": "2026-09-19T15:58:36.304686+00:00",
+    "lastObserved": "2026-09-19T15:58:48.337250+00:00"
+  },
+  "followup": {
+    "sameConversation": true,
+    "newImagesSaved": 1
+  },
+  "responses": {
+    "displayed": 2,
+    "firstRecoveredDuringDebugging": true,
+    "secondCompletedAutomatically": true
+  },
+  "failure": {
+    "localMissingAttachment": "failed",
+    "queuePaused": false
+  },
+  "workflow": {
+    "asset": "EDB042CF-A061-41B6-B119-7FFC3552D59B",
+    "position": {
+      "x": 665,
+      "y": -55
+    },
+    "referenceCount": 1,
+    "recipeSaved": true,
+    "hideUndone": true,
+    "assetCountUnchanged": true,
+    "project": "A3D86F6B-C39C-40E7-BED1-A3DEB4EC98DD"
+  },
+  "restart": "canvas, viewport, references, recipe, undo: restored",
+  "previousData": {
+    "jobsPreserved": 12,
+    "originalFilesPreserved": 14
+  },
+  "sourceSHA256": {
+    "Sources/FlowCore/AssetVault.swift": "231a7cd14cdd8cbba67abe49e9229921d00dabfa9c803656acb95f7d609e6b51",
+    "Sources/FlowCore/JobRules.swift": "3a38ceeef2ac1614c7f8507e5a8473920e14b92cbf71450b18b235faf56dd751",
+    "Sources/FlowCore/Models.swift": "f47078f17918935a55ff649bc632ea84de3c15b51ec89f55c091e5a526169323",
+    "Sources/FlowCore/WorkflowTypes.swift": "a580ae1a83b020b0a153a21cdba6517e70642e31f244b8aaa1b6e570887a8df7",
+    "Sources/ImageFlow/App/DevelopmentCommands.swift": "c2bd245fe5561c87d622414e87d22b1f1a00ee8eb335a729614fea8d27ad7e21",
+    "Sources/ImageFlow/App/ImageFlowApp.swift": "d5aef9c9f37cff709604ccba36fda52c0a9e24b3bef5653fb59e59eb4a593884",
+    "Sources/ImageFlow/Resources/chatgpt-adapter.js": "d0206b68500f2ce102c6bcde84a66d87f41a2d8bd7d9114642b356c7844a850b",
+    "Sources/ImageFlow/Services/ChatGPT/WebSession.swift": "6f3a4df593239cca94826d9760367869252801408ded2ed51af35dfd3e7295e8",
+    "Sources/ImageFlow/Services/ChatGPT/WebWorker.swift": "c2b51068ed1c77c8477db0fda6586b1d9a23c20c6c92cb4df6faeae1703c6848",
+    "Sources/ImageFlow/Services/Generation/GenerationEngine.swift": "72e334e646b6e887453f69e8f5c09ec81ca3facf21782411f3b31616dea4fb89",
+    "Sources/ImageFlow/Stores/LibraryPersistence.swift": "c40d4adb4d5ed2bf16121369ac60c10fe49280540e6b442d72a3c83af20f023b",
+    "Sources/ImageFlow/Stores/WorkflowActions.swift": "93dffa889542477279fd2a9b4271325a447ba4f26d980e6dedf51ac166682941",
+    "Sources/ImageFlow/Stores/WorkspaceStore.swift": "7c28050899fbbc1317917217b261c834459fa00231402b62080dd0481d7f95b4",
+    "Sources/ImageFlow/Views/AssetThumbnail.swift": "23b48fffd768b28ec5f46a74188d236321ebb79452f12d76ae59e3e4cc9c380b",
+    "Sources/ImageFlow/Views/CompareView.swift": "70b7187b54327e11a353d39a08a480b0597a2a4c9c895e5008c66fa4c0f7479f",
+    "Sources/ImageFlow/Views/ComposerView.swift": "3d62cfb531b998f8c603577db17a32446cdcf869a3ed2620f965c8dfe42ce0b5",
+    "Sources/ImageFlow/Views/DropTextEditor.swift": "a6e84ae294f6b0d5b9a518adf9c8aa85cf00f2cc9b3aed194704616e67090869",
+    "Sources/ImageFlow/Views/FreeCanvasView.swift": "f1e8906ec81a018550b11907f8db35da6cf046cc4d94923047d3e7632ed1d53c",
+    "Sources/ImageFlow/Views/InspectorView.swift": "96a7f6d702039d6136e72ae37bb4ed65a58ed69c1c9c0014f0679bd5bab3b8fd",
+    "Sources/ImageFlow/Views/JobResponseView.swift": "21ca1fd4a3dd41081dbda74c5d329ae5c4dcf1560c133eb317794f03bb7639a6",
+    "Sources/ImageFlow/Views/QueueView.swift": "0bbe12adcd45d5fc18ca2a2563160a27a8a3e9e0184060b3a50cea29a8c09cca",
+    "Sources/ImageFlow/Views/SettingsView.swift": "4e1223dab5c2330d8861a80c0c971e5629809e1a942d3c88985f052c75f4347e",
+    "Sources/ImageFlow/Views/WorkspaceView.swift": "2de4f93a9b8b6620f071ac5c02e87e9a359765fdd984a2affc15065d9320dd15"
+  },
+  "limitations": [
+    "Validated on one Apple Silicon Mac, macOS 27.2",
+    "Canvas is a free layout workflow board, not a ComfyUI node execution engine",
+    "File drag types and attachment handling verified; not a full automated mouse-gesture suite",
+    "No comparative memory benchmark, signing or notarization"
+  ]
+}

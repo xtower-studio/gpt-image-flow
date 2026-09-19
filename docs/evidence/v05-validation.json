@@ -1,0 +1,35 @@
+{
+  "date": "2026-09-20",
+  "tests": 26,
+  "ui": {
+    "dropBackRejected": true,
+    "promptDropRejected": true,
+    "referenceDropAccepted": true,
+    "referencesRestored": true,
+    "attentionDismissed": true,
+    "keyboardCount": 12
+  },
+  "generations": [
+    {
+      "model": "flare",
+      "state": "saved",
+      "appliedReasoning": 0,
+      "width": 1254,
+      "height": 1254,
+      "prompt": "A small cobalt blue ceramic teapot, isolated product photograph, no lettering\nsize:1:1\ntransparent_background: true"
+    },
+    {
+      "model": "sunburst",
+      "state": "saved",
+      "appliedReasoning": 2,
+      "width": 1254,
+      "height": 1254,
+      "prompt": "A small cobalt blue ceramic teapot, isolated product photograph, no lettering\nsize:1:1\ntransparent_background: true"
+    }
+  ],
+  "modelPreferenceRestored": true,
+  "smallWindow": [
+    1000,
+    680
+  ]
+}

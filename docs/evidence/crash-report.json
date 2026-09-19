@@ -1,0 +1,51 @@
+[
+  {
+    "boundary": "queued",
+    "writerExit": -9,
+    "expected": "prepare",
+    "actual": "prepare",
+    "passed": true
+  },
+  {
+    "boundary": "uploading",
+    "writerExit": -9,
+    "expected": "prepare",
+    "actual": "prepare",
+    "passed": true
+  },
+  {
+    "boundary": "submitting",
+    "writerExit": -9,
+    "expected": "needsReview",
+    "actual": "needsReview",
+    "passed": true
+  },
+  {
+    "boundary": "submitted",
+    "writerExit": -9,
+    "expected": "collectExisting",
+    "actual": "collectExisting",
+    "passed": true
+  },
+  {
+    "boundary": "generating",
+    "writerExit": -9,
+    "expected": "collectExisting",
+    "actual": "collectExisting",
+    "passed": true
+  },
+  {
+    "boundary": "collecting",
+    "writerExit": -9,
+    "expected": "useSaved",
+    "actual": "useSaved",
+    "passed": true
+  },
+  {
+    "boundary": "saved",
+    "writerExit": -9,
+    "expected": "useSaved",
+    "actual": "useSaved",
+    "passed": true
+  }
+]

@@ -1,0 +1,90 @@
+{
+  "commit": "7783f02518d3d1878f3729e80b8499fb566d15e9",
+  "scope": "static-source-audit; not a ChatGPT account limit test",
+  "files": {
+    "board_server.py": "0b8b1cc60867d9bff17a8f752769bd43c2b91da83b53d2ea69a1444676c86824",
+    "generate_chatgpt_image.py": "019b01c916c97be9ddbd62824207168b147051972e86cc01ac814a576fe8c86b",
+    "README.md": "b82782741fe067b62dfda61138a5349ce3cffdff8cb9ea6cd8f610bc03f38c7b",
+    "LICENSE": "9889af704312c46481cd2c8c46d5de7303dea6586f5656aac400a86e112fd5a8"
+  },
+  "findings": [
+    {
+      "finding": "workers-default-3-not-hard-service-cap",
+      "file": "board_server.py",
+      "line": 93,
+      "url": "https://github.com/ManiacMike/chatgpt-endless-canvas/blob/7783f02518d3d1878f3729e80b8499fb566d15e9/board_server.py#L93"
+    },
+    {
+      "finding": "batch-app-limit-50",
+      "file": "board_server.py",
+      "line": 535,
+      "url": "https://github.com/ManiacMike/chatgpt-endless-canvas/blob/7783f02518d3d1878f3729e80b8499fb566d15e9/board_server.py#L535"
+    },
+    {
+      "finding": "worker-delay-30-120",
+      "file": "board_server.py",
+      "line": 85,
+      "url": "https://github.com/ManiacMike/chatgpt-endless-canvas/blob/7783f02518d3d1878f3729e80b8499fb566d15e9/board_server.py#L85"
+    },
+    {
+      "finding": "delay-occurs-inside-worker",
+      "file": "board_server.py",
+      "line": 376,
+      "url": "https://github.com/ManiacMike/chatgpt-endless-canvas/blob/7783f02518d3d1878f3729e80b8499fb566d15e9/board_server.py#L376"
+    },
+    {
+      "finding": "generation-timeout-420",
+      "file": "board_server.py",
+      "line": 326,
+      "url": "https://github.com/ManiacMike/chatgpt-endless-canvas/blob/7783f02518d3d1878f3729e80b8499fb566d15e9/board_server.py#L326"
+    },
+    {
+      "finding": "process-timeout-500",
+      "file": "board_server.py",
+      "line": 333,
+      "url": "https://github.com/ManiacMike/chatgpt-endless-canvas/blob/7783f02518d3d1878f3729e80b8499fb566d15e9/board_server.py#L333"
+    },
+    {
+      "finding": "recover-then-regenerate-if-failed",
+      "file": "board_server.py",
+      "line": 322,
+      "url": "https://github.com/ManiacMike/chatgpt-endless-canvas/blob/7783f02518d3d1878f3729e80b8499fb566d15e9/board_server.py#L322"
+    },
+    {
+      "finding": "history-truncated-to-500",
+      "file": "board_server.py",
+      "line": 122,
+      "url": "https://github.com/ManiacMike/chatgpt-endless-canvas/blob/7783f02518d3d1878f3729e80b8499fb566d15e9/board_server.py#L122"
+    },
+    {
+      "finding": "attachment-failure-continues",
+      "file": "generate_chatgpt_image.py",
+      "line": 386,
+      "url": "https://github.com/ManiacMike/chatgpt-endless-canvas/blob/7783f02518d3d1878f3729e80b8499fb566d15e9/generate_chatgpt_image.py#L386"
+    },
+    {
+      "finding": "timeout-may-return-intermediate",
+      "file": "generate_chatgpt_image.py",
+      "line": 532,
+      "url": "https://github.com/ManiacMike/chatgpt-endless-canvas/blob/7783f02518d3d1878f3729e80b8499fb566d15e9/generate_chatgpt_image.py#L532"
+    },
+    {
+      "finding": "recovery-effective-image-wait-max-20",
+      "file": "generate_chatgpt_image.py",
+      "line": 539,
+      "url": "https://github.com/ManiacMike/chatgpt-endless-canvas/blob/7783f02518d3d1878f3729e80b8499fb566d15e9/generate_chatgpt_image.py#L539"
+    },
+    {
+      "finding": "silent-rate-limit-described",
+      "file": "README.md",
+      "line": 137,
+      "url": "https://github.com/ManiacMike/chatgpt-endless-canvas/blob/7783f02518d3d1878f3729e80b8499fb566d15e9/README.md#L137"
+    },
+    {
+      "finding": "source-license-MIT",
+      "file": "LICENSE",
+      "line": 1,
+      "url": "https://github.com/ManiacMike/chatgpt-endless-canvas/blob/7783f02518d3d1878f3729e80b8499fb566d15e9/LICENSE#L1"
+    }
+  ]
+}

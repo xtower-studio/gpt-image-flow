@@ -49,29 +49,53 @@ final class AdapterWorkflowTests: XCTestCase {
         do { _ = try await call(web,"setReasoning",payload:["level":4]); XCTFail("Silently accepted unapplied reasoning") }
         catch { XCTAssertTrue(String(describing:error).contains("reasoning-not-applied")) }
     }
-    @MainActor func testImageModeUsesMenuPreservesPromptAndIsIdempotent() async throws {
-        for (label, tag) in [("이미지 만들기", "button"), ("Create image", "div")] {
-            let web = try await fixture("""
-            <form><div id="prompt-textarea" contenteditable="true"></div>
-            <button type="button" data-testid="composer-plus-btn" aria-expanded="false">+</button>
-            <\(tag) class="choice" hidden>\(label)</\(tag)></form>
-            <script>
-            window.selections=0;
-            const plus=document.querySelector('[data-testid=composer-plus-btn]');
-            const choice=document.querySelector('.choice');if(choice.tagName==='DIV')choice.setAttribute('role','menuitem');
-            plus.onclick=()=>{plus.setAttribute('aria-expanded','true');choice.hidden=false;};
-            plus.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){plus.setAttribute('aria-expanded','true');document.querySelector('.choice').hidden=false;}});
-            document.querySelector('.choice').onclick=()=>{window.selections++;const pill=document.createElement('span');pill.setAttribute('data-system-hint-type','picture_v2');pill.contentEditable='false';document.querySelector('#prompt-textarea').prepend(pill);};
-            </script>
-            """)
-            defer { web.stopLoading() }
-            _ = try await call(web, "type", payload: ["prompt":"A teapot\nsize:1:1"])
-            for _ in 0..<2 { let result = try await call(web, "imageMode"); XCTAssertEqual(result["ok"] as? Bool, true) }
-            let selections = try await web.evaluateJavaScript("window.selections") as? Int
-            XCTAssertEqual(selections, 1)
-            let text = try await web.evaluateJavaScript("document.querySelector('#prompt-textarea').innerText") as? String
-            XCTAssertTrue(text?.contains("A teapot") == true); XCTAssertTrue(text?.contains("size:1:1") == true)
-        }
+    @MainActor func testImagePillInjectionIsLiteralIdempotentAndDoesNotSendOrOpenMenus() async throws {
+        let web = try await fixture("""
+        <form><div id="prompt-textarea" contenteditable="true"></div>
+        <button type="button" data-testid="composer-plus-btn" onclick="window.menuOpened=true">+</button>
+        <button type="button" data-testid="send-button" onclick="window.sent=true">Send</button></form>
+        <script>
+        window.inputs=[];window.changes=0;
+        document.querySelector('#prompt-textarea').addEventListener('input',e=>window.inputs.push(e.inputType));
+        document.querySelector('#prompt-textarea').addEventListener('change',()=>window.changes++);
+        </script>
+        """)
+        defer { web.stopLoading() }
+        let prompt = "A <img src=x onerror=alert(1)> & \"teapot\"\n\nsize:1:1\nn=4"
+        for _ in 0..<2 { _ = try await call(web, "composeImage", payload: ["prompt": prompt]) }
+        let result = try await web.evaluateJavaScript("""
+        (()=>{const el=document.querySelector('#prompt-textarea'),pill=el.querySelector('[data-id="picture_v2"]');
+        const copy=el.cloneNode(true);copy.querySelector('span').remove();copy.firstChild.firstChild.remove();
+        return {count:el.querySelectorAll('span').length,editable:pill.contentEditable,symbol:pill.dataset.symbol,
+        keyword:pill.dataset.keyword,hint:pill.dataset.systemHintType,inline:pill.hasAttribute('data-inline-selection-pill'),
+        prompt:Array.from(copy.children).map(p=>p.textContent).join('\\n'),imgs:el.querySelectorAll('img').length,
+        sent:window.sent===true,menu:window.menuOpened===true,inputs:window.inputs,changes:window.changes};})()
+        """) as! [String: Any]
+        XCTAssertEqual(result["count"] as? Int, 1)
+        XCTAssertEqual(result["editable"] as? String, "false")
+        XCTAssertEqual(result["symbol"] as? String, "ecosystemMention")
+        XCTAssertEqual(result["keyword"] as? String, "이미지 만들기")
+        XCTAssertEqual(result["hint"] as? String, "picture_v2")
+        XCTAssertEqual(result["inline"] as? Bool, true)
+        XCTAssertEqual(result["prompt"] as? String, prompt)
+        XCTAssertEqual(result["imgs"] as? Int, 0)
+        XCTAssertEqual(result["sent"] as? Bool, false)
+        XCTAssertEqual(result["menu"] as? Bool, false)
+        XCTAssertEqual(result["inputs"] as? [String], ["insertHTML", "insertHTML"])
+        XCTAssertEqual(result["changes"] as? Int, 2)
+        _ = try await call(web, "verifyImageMode")
+        _ = try await call(web, "submit")
+        let sent = try await web.evaluateJavaScript("window.sent===true") as? Bool
+        XCTAssertEqual(sent, true)
+    }
+    @MainActor func testImagePillReconciliationFailureStopsPreparation() async throws {
+        let web = try await fixture("""
+        <div id="prompt-textarea" contenteditable="true"></div>
+        <script>document.querySelector('#prompt-textarea').addEventListener('input',()=>setTimeout(()=>document.querySelector('span')?.remove(),20));</script>
+        """)
+        defer { web.stopLoading() }
+        do { _ = try await call(web, "composeImage", payload: ["prompt":"A teapot"]); XCTFail("Accepted a discarded pill") }
+        catch { XCTAssertTrue(String(describing: error).contains("image-mode-not-applied")) }
     }
     @MainActor func testSubmitRejectsMissingImageModeBeforeClickingSend() async throws {
         let web = try await fixture("<form><div id='prompt-textarea' contenteditable='true'>A teapot</div><button type='button' data-testid='send-button' onclick='window.sent=true'>Send</button></form>")
@@ -84,7 +108,8 @@ final class AdapterWorkflowTests: XCTestCase {
     @MainActor func testPlaceholderIsNotReplyAndActualMarkdownIsPreserved() async throws {
         let web = try await fixture("""
         <main><div data-message-author-role="assistant" id="response">원본 답변을 기다리는 중</div>
-        <form><div id="prompt-textarea" contenteditable="true"></div><button data-testid="send-button" aria-disabled="true"></button></form></main>
+        <nav><a tabindex="0" onclick="window.wrongConversation=true">이미지 만들기</a><button type="button" onclick="window.wrongConversation=true">Create image</button></nav>
+            <form><div id="prompt-textarea" contenteditable="true"></div><button data-testid="send-button" aria-disabled="true"></button></form></main>
         """)
         defer { web.stopLoading() }
         let pending = try await call(web,"snapshot")

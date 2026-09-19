@@ -15,7 +15,7 @@ public actor AssetVault {
                          isReference: true)
     }
     public func store(_ bytes: Data, projectID: UUID, title: String, isReference: Bool,
-                      jobID: UUID? = nil, parentID: UUID? = nil) throws -> Asset {
+                      jobID: UUID? = nil, parentID: UUID? = nil, generationMetadata: ImageGenerationMetadata? = nil) throws -> Asset {
         guard bytes.count <= 50 * 1024 * 1024 else { throw FlowError.message("앱에서 가져올 수 있는 파일은 50MB 이하입니다.") }
         guard let source = CGImageSourceCreateWithData(bytes as CFData, nil),
               let type = CGImageSourceGetType(source),
@@ -30,9 +30,10 @@ public actor AssetVault {
               ] as CFDictionary) else { throw FlowError.message("이미지 파일을 읽을 수 없습니다.") }
         let id = UUID()
         let ext = UTType(type as String)?.preferredFilenameExtension ?? "png"
-        let asset = Asset(id: id, projectID: projectID, filename: "\(id).\(ext)", title: title,
+        var asset = Asset(id: id, projectID: projectID, filename: "\(id).\(ext)", title: title,
                           width: width, height: height, digest: Self.hash(bytes), isReference: isReference,
                           jobID: jobID, parentID: parentID)
+        asset.generationMetadata = generationMetadata
         for folder in ["Originals", "Thumbnails", "Receipts"] {
             try FileManager.default.createDirectory(at: root.appendingPathComponent(folder), withIntermediateDirectories: true)
         }
@@ -48,6 +49,10 @@ public actor AssetVault {
             try JSONEncoder().encode(asset).write(to: root.appendingPathComponent("Receipts/\(id).json"), options: .atomic)
         }
         return asset
+    }
+    public func updateReceipt(_ asset: Asset) throws {
+        guard asset.jobID != nil else { return }
+        try JSONEncoder().encode(asset).write(to: root.appendingPathComponent("Receipts/\(asset.id).json"), options: .atomic)
     }
     public func receipts() throws -> [Asset] {
         let directory = root.appendingPathComponent("Receipts")

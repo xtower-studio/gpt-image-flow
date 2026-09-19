@@ -46,7 +46,7 @@ struct CompareView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(asset.title).font(.system(size: 13, weight: .medium)).lineLimit(1)
-                                    Text("\(asset.width) × \(asset.height)").font(.system(size: 11)).foregroundStyle(.secondary)
+                                    Text("\(asset.width) × \(asset.height) · \(asset.actualModelLabel)").font(.system(size: 11)).foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 Button { store.toggleFavorite(asset) } label: { Image(systemName: store.asset(asset.id)?.isFavorite == true ? "star.fill" : "star") }.help("후보 표시")

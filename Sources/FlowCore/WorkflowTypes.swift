@@ -1,10 +1,30 @@
 import Foundation
 
-/// User-facing image models. Keep routing separate from any quality ranking.
+/// Actual output names, also retained to decode old model preferences.
 public enum ImageModel: String, Codable, CaseIterable, Sendable {
     case flare, sunburst
     public var label: String { self == .flare ? "Flare" : "Sunburst" }
-    public var reasoning: ReasoningLevel { self == .flare ? .instant : .standard }
+}
+public enum GenerationMode: String, Codable, CaseIterable, Sendable {
+    case automatic, sunburstExperimental, instant
+    public var label: String {
+        switch self { case .automatic: "자동"; case .sunburstExperimental: "Sunburst (실험)"; case .instant: "Instant" }
+    }
+    public var imagesPerRequest: Int {
+        switch self { case .automatic: 4; case .sunburstExperimental: 2; case .instant: 1 }
+    }
+    public var explanation: String {
+        switch self {
+        case .automatic: "4장을 동시에 생성합니다. 보통 Flare 2장, Sunburst 2장으로 구성됩니다."
+        case .sunburstExperimental: "2장을 동시에 생성합니다. 높은 확률로 Sunburst를 사용합니다."
+        case .instant: "가장 빠르고 저렴한 모델을 사용합니다. 한 번에 1장을 생성합니다."
+        }
+    }
+    // Non-instant reasoning enables automatic routing; it does not select a model.
+    public var reasoning: ReasoningLevel { self == .instant ? .instant : .light }
+    public static func migrated(from legacy: ImageModel?) -> Self {
+        switch legacy { case .flare: .instant; case .sunburst: .sunburstExperimental; case nil: .automatic }
+    }
 }
 public enum BackgroundOption: String, Codable, CaseIterable, Sendable {
     case automatic, transparent, opaque
@@ -20,7 +40,7 @@ public enum BackgroundOption: String, Codable, CaseIterable, Sendable {
     }
 }
 
-// Retained for decoding historical requests; new requests use ImageModel.
+// Retained for decoding historical requests; new requests use GenerationMode.
 public enum ReasoningLevel: Int, Codable, CaseIterable, Sendable {
     case instant = 0, light, standard, extended, heavy
     public var label: String {

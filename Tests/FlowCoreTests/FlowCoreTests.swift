@@ -86,6 +86,20 @@ final class FlowCoreTests: XCTestCase {
         XCTAssertTrue(CGImageDestinationFinalize(destination))
         return bytes as Data
     }
+    func testGenerationEvidenceSurvivesReceiptAndExport() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let vault = AssetVault(root: root)
+        let evidence = ImageGenerationMetadata(fileID: "file_exact", messageID: "response", genSize: "image", genSizeV2: "32")
+        let asset = try await vault.store(png(), projectID: UUID(), title: "result", isReference: false, jobID: UUID(), generationMetadata: evidence)
+        let recovered = try await vault.receipts()
+        XCTAssertEqual(recovered.first?.generationMetadata, evidence)
+        let folder = try await vault.export([asset], jobs: [], to: root.appendingPathComponent("export"))
+        let json = try JSONSerialization.jsonObject(with: Data(contentsOf: folder.appendingPathComponent("manifest.json"))) as! [String: Any]
+        let assets = json["assets"] as! [[String: Any]]
+        let stored = assets[0]["asset"] as! [String: Any]
+        XCTAssertEqual((stored["generationMetadata"] as? [String: Any])?["fileID"] as? String, "file_exact")
+    }
     func testOriginalAndReceiptSurviveSeparateVaultInstance() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

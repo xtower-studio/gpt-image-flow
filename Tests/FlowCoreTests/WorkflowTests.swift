@@ -38,12 +38,12 @@ final class WorkflowTests: XCTestCase {
         XCTAssertTrue(QueueAdmission.canStart(next, alongside: [a]))
     }
     func testBatchFreezesReasoningAndCanvasCoordinatesRoundTrip() throws {
-        var project = Project(name: "Canvas"); project.prompt = "vase"; project.imageModel = .sunburst
+        var project = Project(name: "Canvas"); project.prompt = "vase"; project.generationMode = .sunburstExperimental
         project.layout = ["node": CanvasPoint(x: -300, y: 250)]
         project.viewport = CanvasViewport(x: 70, y: -90, scale: 0.5)
-        let jobs = try JobRules.makeBatch(project: project); project.imageModel = .flare
-        XCTAssertEqual(jobs.first?.imageModel, .sunburst)
-        XCTAssertEqual(jobs.first?.reasoning?.rawValue, 2)
+        let jobs = try JobRules.makeBatch(project: project); project.generationMode = .instant
+        XCTAssertEqual(jobs.first?.generationMode, .sunburstExperimental)
+        XCTAssertEqual(jobs.first?.reasoning?.rawValue, 1)
         let restored = try JSONDecoder().decode(Project.self, from: JSONEncoder().encode(project))
         XCTAssertEqual(restored.layout, project.layout)
         XCTAssertEqual(restored.viewport?.world(x: 120, y: -40), CanvasPoint(x: 100, y: 100))

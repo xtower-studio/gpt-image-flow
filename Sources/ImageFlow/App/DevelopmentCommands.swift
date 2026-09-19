@@ -49,14 +49,21 @@ extension FlowAppDelegate {
                 let proof: [String:Any] = ["project":project.id.uuidString,"asset":asset.id.uuidString,"assetCountUnchanged":true,"referenceCount":updated.referenceIDs.count,"position":["x":position.x,"y":position.y],"recipeSaved":true,"hideUndone":!(store.library.hiddenAssetIDs ?? []).contains(asset.id)]
                 try JSONSerialization.data(withJSONObject:proof, options:.prettyPrinted).write(to:directory.appendingPathComponent("workflow-verification.json"))
                 store.requestedProjectID = project.id
+            } else if operation == "verifyActualMetadata", let session {
+                let worker = try WebWorker(slot: 0, session: session)
+                defer { worker.close() }
+                guard let job = store.jobs.last(where: { $0.conversationID != nil }) else { return }
+                try await worker.load(job.conversationID)
+                let evidence = try await worker.generationMetadata()
+                try JSONEncoder().encode(evidence).write(to: directory.appendingPathComponent("actual-model-metadata.json"))
             } else if operation == "verifyImageModels", let session {
                 let worker = try WebWorker(slot: 0, session: session)
                 defer { worker.close() }
                 var proof: [[String: Any]] = []
-                for model in ImageModel.allCases {
+                for model in GenerationMode.allCases {
                     var project = Project(name: "Model preparation verification")
                     project.prompt = "A cobalt ceramic teapot"; project.aspect = "1:1"
-                    project.background = .transparent; project.imageModel = model
+                    project.background = .transparent; project.generationMode = model
                     let job = try JobRules.makeBatch(project: project)[0]
                     _ = try await worker.prepare(job: job, files: [])
                     let text = try await worker.web.evaluateJavaScript("document.querySelector('#prompt-textarea')?.innerText || ''") as? String ?? ""
@@ -64,12 +71,12 @@ extension FlowAppDelegate {
                     try JSONSerialization.data(withJSONObject: proof, options: .prettyPrinted).write(to: directory.appendingPathComponent("image-model-verification.json"))
                 }
             } else if operation == "imageModelSmoke" {
-                var project = Project(name: "v0.5 검증 · 이미지 모델")
+                var project = Project(name: "v0.6 검증 · 생성 방식")
                 project.prompt = "A small cobalt blue ceramic teapot, isolated product photograph, no lettering"
                 project.aspect = "1:1"; project.background = .transparent
                 store.library.projects.append(project)
-                for model in ImageModel.allCases {
-                    project.imageModel = model
+                for model in GenerationMode.allCases {
+                    project.generationMode = model
                     var job = try JobRules.makeBatch(project: project)[0]; job.label = model.label
                     store.reserveCanvasPositions(for: [job]); store.journal.jobs.append(job)
                 }
@@ -106,7 +113,7 @@ extension FlowAppDelegate {
                 store.reserveCanvasPositions(for: [job]); store.journal.jobs.append(job); store.flush()
                 store.requestedProjectID = project.id; store.requestedJobID = job.id
             } else if operation == "followupSmoke", let job = store.jobs.last(where: { $0.state == .responded }) {
-                try store.enqueueFollowup(to: job, text: "파스텔 민트색 도자기 주전자로 만들어 주세요. 따뜻한 흰색 배경 위의 제품 사진 한 장을 지금 생성해 주세요.", model: .sunburst)
+                try store.enqueueFollowup(to: job, text: "파스텔 민트색 도자기 주전자로 만들어 주세요. 따뜻한 흰색 배경 위의 제품 사진 한 장을 지금 생성해 주세요.", mode: .sunburstExperimental)
                 store.requestedProjectID = job.projectID
             } else if operation == "failureSmoke", let project = store.library.projects.last {
                 let job = Job(batchID: UUID(), projectID: project.id, prompt: "Local attachment failure fixture", label: "첨부 실패 검증", referenceIDs: [UUID()])

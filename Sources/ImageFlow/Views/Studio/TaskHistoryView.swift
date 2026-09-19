@@ -31,7 +31,7 @@ struct TaskHistoryView: View {
                                     else { Image(systemName: symbol(job)).font(.system(size: 19)).foregroundStyle(job.state.needsAttention && job.state != .responded ? Color.orange : .secondary).frame(width: 46, height: 46).background(.quaternary.opacity(0.25), in: RoundedRectangle(cornerRadius: 5)) }
                                     VStack(alignment: .leading, spacing: 5) {
                                         HStack { Text(job.label).fontWeight(.medium); Spacer(); Text(job.createdAt, style: .time).font(.caption).foregroundStyle(.secondary) }
-                                        Text(job.state.label).font(.caption).foregroundStyle(job.state == .failed ? Color.orange : .secondary)
+                                        Text("\(job.state.label) · \(job.results.count)/\(job.expectedImageCount)장").font(.caption).foregroundStyle(job.state == .failed ? Color.orange : .secondary)
                                         Text(job.responseText ?? job.error ?? job.prompt).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(2).multilineTextAlignment(.leading)
                                     }
                                 }.contentShape(Rectangle()).padding(.vertical, 13).padding(.horizontal, 16)

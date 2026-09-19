@@ -19,9 +19,9 @@ import FlowCore
     @ObservationIgnored let vault: AssetVault
     @ObservationIgnored var persistence: LibraryPersistence?
     @ObservationIgnored var draftSave: Task<Void, Never>?
-    var selectedImageModel: ImageModel {
-        get { library.preferredModel ?? .sunburst }
-        set { library.preferredModel = newValue; flush() }
+    var selectedGenerationMode: GenerationMode {
+        get { library.preferredGenerationMode ?? .migrated(from: library.preferredModel) }
+        set { library.preferredGenerationMode = newValue; flush() }
     }
     func dismissAttention(_ ids: Set<UUID>) {
         for index in journal.jobs.indices where ids.contains(journal.jobs[index].id) {

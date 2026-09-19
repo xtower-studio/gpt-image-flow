@@ -34,7 +34,7 @@ struct WorkspaceSidebar: View {
                     Circle().fill(session.status == .ready ? Color.green : Color.orange).frame(width: 6, height: 6)
                     VStack(alignment: .leading, spacing: 3) {
                         Text("ChatGPT").font(.system(size: 12, weight: .medium))
-                        Text(engine.activeCount > 0 ? "\(engine.activeCount)개 생성 중" : session.status == .ready ? "연결됨" : "로그인 필요").font(.system(size: 11)).foregroundStyle(.secondary)
+                        Text(engine.activeCount > 0 ? "\(engine.activeCount)개 요청 진행 중" : session.status == .ready ? "연결됨" : "로그인 필요").font(.system(size: 11)).foregroundStyle(.secondary)
                     }
                     Spacer()
                     Menu {

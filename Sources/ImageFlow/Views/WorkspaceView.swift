@@ -203,7 +203,9 @@ struct WorkspaceView: View {
     private func reuse(_ job: Job) {
         guard var project else { return }
         project.prompt = job.prompt; project.variations = ""; project.copies = 1; project.referenceIDs = job.referenceIDs; project.reasoning = job.reasoning
-        store.selectedImageModel = job.requestedModel
+        project.prompt = job.inputPrompt ?? job.prompt
+        project.aspect = job.requestedAspect ?? "자유"; project.background = job.requestedBackground
+        if let mode = job.generationMode { store.selectedGenerationMode = mode }
         store.updateProject(project); editing = nil; startCreate()
     }
 }

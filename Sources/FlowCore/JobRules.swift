@@ -27,20 +27,31 @@ public enum JobRules {
         guard !prompt.isEmpty else { throw FlowError.message("만들고 싶은 이미지를 적어 주세요.") }
         let variations = project.variations.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         let count = variations.isEmpty ? project.copies : variations.count
-        guard (1...maximum).contains(count) else { throw FlowError.message("한 번에 1~\(maximum)개를 생성할 수 있습니다.") }
+        guard (1...maximum).contains(count) else { throw FlowError.message("요청 횟수는 1~\(maximum)회로 설정해 주세요.") }
         let batchID = UUID()
+        let mode = project.generationMode ?? GenerationMode.migrated(from: project.imageModel)
         return (0..<count).map { index in
             let variation = variations.isEmpty ? "" : variations[index]
             let size = ["자유", "자동"].contains(project.aspect) ? nil : "size:\(project.aspect)"
-            let full = [prompt, variation.isEmpty ? nil : variation, size, project.background?.promptOption]
+            let full = [prompt, variation.isEmpty ? nil : variation, size, project.background?.promptOption, "n=\(mode.imagesPerRequest)"]
                 .compactMap { $0 }.joined(separator: "\n")
             var job = Job(batchID: batchID, projectID: project.id, prompt: full,
-                       label: variation.isEmpty ? "시안 \(index + 1)" : variation,
+                       label: variation.isEmpty ? "요청 \(index + 1)" : variation,
                        referenceIDs: project.referenceIDs, parentID: parentID)
-            job.imageModel = project.imageModel ?? .sunburst
-            job.reasoning = job.requestedModel.reasoning
+            job.generationMode = mode; job.requestedImageCount = mode.imagesPerRequest
+            job.reasoning = mode.reasoning
+            job.inputPrompt = [prompt, variation.isEmpty ? nil : variation].compactMap { $0 }.joined(separator: "\n")
+            job.requestedAspect = project.aspect; job.requestedBackground = project.background
             return job
         }
+    }
+    public static func finishing(_ job: Job) -> Job {
+        var job = job
+        let count = job.results.count
+        job.state = count >= job.expectedImageCount ? .saved : .needsReview
+        job.error = count >= job.expectedImageCount ? nil : "요청한 \(job.expectedImageCount)장 중 \(count)장을 저장했습니다. 기존 대화에서 나머지 결과를 확인할 수 있습니다."
+        job.finishedAt = Date()
+        return job
     }
     public static func recovered(_ job: Job) -> Job {
         var job = job

@@ -98,6 +98,9 @@ import FlowCore
             }
             baseline = try await worker.prepare(job: job, files: files)
             excluded = Set(baseline.images.map(\.fileID))
+            if job.continuationOf != nil, let metadata = try? await worker.generationMetadata() {
+                excluded.formUnion(metadata.map(\.fileID))
+            }
             if store.journal.paused {
                 try store.updateJob(job.id) { $0.state = .queued }
                 return
@@ -137,18 +140,25 @@ import FlowCore
             let candidates = newImages.filter { $0.complete && $0.width > 0 && $0.height > 0 }
             let key = candidates.map(\.url).joined(separator: "|")
             if key != stableKey || state.generating || candidates.count != newImages.count { stableKey = key; stableSince = Date() }
-            if !candidates.isEmpty, candidates.count == newImages.count, !state.generating, Date().timeIntervalSince(stableSince) >= 5 {
+            if !candidates.isEmpty, candidates.count == newImages.count, !state.generating, Date().timeIntervalSince(stableSince) >= (candidates.count >= job.expectedImageCount ? 5 : 25) {
                 try store.updateJob(job.id) { $0.state = .collecting; $0.responseID = candidates.last?.responseID }
-                for image in candidates {
+                let metadata = (try? await worker.generationMetadata()) ?? []
+                let byFile = Dictionary(uniqueKeysWithValues: metadata.map { ($0.fileID, $0) })
+                for (index, image) in candidates.enumerated() {
+                    let existing = store.jobs.first(where: { $0.id == job.id })?.results ?? []
+                    if existing.contains(where: { $0.generationMetadata?.fileID == image.fileID }) { continue }
                     let bytes = try await worker.bytes(for: image)
                     let digest = AssetVault.hash(bytes)
-                    if store.jobs.first(where: { $0.id == job.id })?.results.contains(where: { $0.digest == digest }) == true { continue }
-                    let asset = try await store.vault.store(bytes, projectID: job.projectID, title: job.label,
-                        isReference: false, jobID: job.id, parentID: job.parentID)
+                    if existing.contains(where: { $0.generationMetadata == nil && $0.digest == digest }) { continue }
+                    let title = job.expectedImageCount > 1 || candidates.count > 1 ? "\(job.label) · \(index + 1)" : job.label
+                    let evidence = byFile[image.fileID] ?? ImageGenerationMetadata(fileID: image.fileID, messageID: image.responseID, genSize: nil, genSizeV2: nil)
+                    let asset = try await store.vault.store(bytes, projectID: job.projectID, title: title,
+                        isReference: false, jobID: job.id, parentID: job.parentID, generationMetadata: evidence)
                     store.upsert(asset)
+                    store.placeResult(asset, job: job, index: index)
                     try store.updateJob(job.id) { $0.results.append(asset) }
                 }
-                try store.updateJob(job.id) { $0.state = .saved; $0.error = nil; $0.finishedAt = Date() }
+                try store.updateJob(job.id) { $0 = JobRules.finishing($0) }
                 return
             }
             if !state.generating, candidates.isEmpty, state.assistantCount > (recovery ? (job.baselineAssistantCount ?? 0) : baseline.assistantCount), !state.reply.isEmpty {

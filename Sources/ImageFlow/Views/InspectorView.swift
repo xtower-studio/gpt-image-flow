@@ -6,6 +6,8 @@ struct InspectorView: View {
     var edit: (Asset) -> Void
     var reuse: (Job) -> Void
     @Environment(WorkspaceStore.self) private var store
+    @Environment(GenerationEngine.self) private var engine
+    @State private var checkingMetadata = false
     var body: some View {
         ScrollView {
             if let asset {
@@ -38,7 +40,20 @@ struct InspectorView: View {
                             }
                         }
                         VStack(spacing: 10) {
-                            detail("모델", job.requestedModel.label)
+                            detail("실제 모델", asset.actualModelLabel)
+                            detail("생성 방식", job.requestModeLabel)
+                            if let size = asset.generationMetadata?.genSize {
+                                detail("식별 근거", "gen_size: \(size)")
+                            }
+                            if asset.generationMetadata?.model == nil {
+                                Button(checkingMetadata ? "모델 정보 확인 중…" : "모델 정보 확인") {
+                                    checkingMetadata = true
+                                    Task { @MainActor in
+                                        defer { checkingMetadata = false }
+                                        do { try await engine.refreshMetadata(for: asset) } catch { store.report(error) }
+                                    }
+                                }.buttonStyle(.borderless).disabled(checkingMetadata)
+                            }
                             detail("생성일", asset.createdAt.formatted(date: .abbreviated, time: .shortened))
                         }
                         if let url = job.conversationURL { Link(destination: url) { Label("ChatGPT 대화 열기", systemImage: "arrow.up.right") }.font(.system(size: 11)) }

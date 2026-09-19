@@ -28,34 +28,78 @@ if (operation === 'setReasoning') {
   return JSON.stringify({level:applied,label:reasoningPill()?.innerText || ''});
 }
 const imageModeActive = () => !!composer()?.querySelector('[data-system-hint-type="picture_v2"],[data-inline-selection-pill][data-id="picture_v2"]');
-if (operation === 'imageMode') {
-  if (imageModeActive()) return JSON.stringify({ok:true});
-  const plus = document.querySelector('button[data-testid="composer-plus-btn"],button#composer-plus-btn');
-  if (!plus) throw new Error('image-mode-menu-unavailable');
-  if (plus.getAttribute('aria-expanded') !== 'true') {
-    plus.focus();
-    plus.click();
-    await new Promise(resolve=>setTimeout(resolve,150));
-    if (plus.getAttribute('aria-expanded') !== 'true') plus.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',code:'ArrowDown',bubbles:true,cancelable:true}));
-  }
-  let choice;
-  for (let attempt=0; attempt<20; attempt++) {
-    choice = Array.from(document.querySelectorAll('button,[role="menuitem"],[role="option"],[role="button"],[tabindex]')).find(el =>
-      el.getClientRects().length && /^(Create (an )?image|이미지 만들기)(\s|$)/i.test(el.innerText.trim()) && enabled(el));
-    if (choice) break;
-    await new Promise(resolve=>setTimeout(resolve,100));
-  }
-  if (!choice) throw new Error('image-mode-choice-unavailable');
-  choice.click();
-  for (let attempt=0; attempt<20; attempt++) {
-    if (imageModeActive()) return JSON.stringify({ok:true});
-    await new Promise(resolve=>setTimeout(resolve,100));
-  }
-  throw new Error('image-mode-not-applied');
+if (operation === 'composeImage') {
+  const el = composer();
+  if (!el || el.tagName === 'TEXTAREA' || !el.isContentEditable) throw new Error('image-composer-unavailable');
+  if (typeof payload.prompt !== 'string' || !payload.prompt.trim()) throw new Error('image-prompt-empty');
+  el.focus();
+  // Build DOM nodes rather than interpolating user text into HTML. ProseMirror's
+  // mutation observer parses the inline tool node together with the prompt.
+  const paragraphs = payload.prompt.split('\n').map(line => {
+    const p = document.createElement('p'); p.textContent = line; return p;
+  });
+  const pill = document.createElement('span');
+  for (const [key, value] of Object.entries({
+    contenteditable:'false', 'data-inline-selection-pill':'', 'data-id':'picture_v2',
+    'data-symbol':'ecosystemMention', 'data-keyword':'이미지 만들기',
+    'data-system-hint-type':'picture_v2',
+    class:'inline-flex items-center gap-1 rounded-md bg-token-main-surface-secondary px-2 py-0.5 text-sm font-medium select-none'
+  })) pill.setAttribute(key, value);
+  pill.textContent = '이미지 만들기';
+  paragraphs[0].prepend(pill, document.createTextNode('\u00a0'));
+  el.replaceChildren(...paragraphs);
+  el.dispatchEvent(new InputEvent('input', {bubbles:true, inputType:'insertHTML'}));
+  el.dispatchEvent(new Event('change', {bubbles:true}));
+  // Allow ProseMirror/React to reconcile before accepting the tool selection.
+  await new Promise(resolve=>setTimeout(resolve,250));
+  if (!imageModeActive()) throw new Error('image-mode-not-applied');
+  return JSON.stringify({ok:true});
 }
 if (operation === 'verifyImageMode') {
   if (!imageModeActive()) throw new Error('image-mode-not-applied');
   return JSON.stringify({ok:true});
+}
+if (operation === 'generationMetadata') {
+  const id = location.pathname.match(/^\/c\/([0-9a-f-]{36})$/i)?.[1];
+  if (!id) throw new Error('metadata-conversation-unavailable');
+  // Authentication stays inside this WKWebView. Return only per-image evidence.
+  const authResponse = await fetch('/api/auth/session', {credentials:'include'});
+  if (!authResponse.ok) throw new Error('metadata-session-unavailable');
+  const session = await authResponse.json();
+  if (typeof session.accessToken !== 'string') throw new Error('metadata-session-unavailable');
+  const response = await fetch('/backend-api/conversation/' + id, {
+    credentials:'include', headers:{Authorization:'Bearer ' + session.accessToken}
+  });
+  if (!response.ok) throw new Error('metadata-http-' + response.status);
+  const conversation = await response.json();
+  const mapping = conversation.mapping || {};
+  const branch = [], seen = new Set();
+  let cursor = conversation.current_node;
+  while (cursor && mapping[cursor] && !seen.has(cursor)) {
+    seen.add(cursor); branch.push(mapping[cursor]); cursor = mapping[cursor].parent;
+  }
+  const images = new Map();
+  const scalar = v => typeof v === 'string' || typeof v === 'number' ? String(v) : null;
+  for (const node of branch.reverse()) {
+    const message = node.message;
+    if (!['assistant','tool'].includes(message?.author?.role)) continue;
+    for (const part of message?.content?.parts || []) {
+      if (part?.content_type !== 'image_asset_pointer' || typeof part.asset_pointer !== 'string') continue;
+      const id = part.asset_pointer.match(/file[-_][A-Za-z0-9]+/)?.[0];
+      if (!id) continue;
+      const gen = part.metadata?.generation;
+      const record = {fileID:id,messageID:message.id || '',genSize:scalar(gen?.gen_size),genSizeV2:scalar(gen?.gen_size_v2)};
+      const existing = images.get(id);
+      if (!existing) images.set(id, record);
+      else {
+        for (const key of ['genSize','genSizeV2']) {
+          if (existing[key] && record[key] && existing[key] !== record[key]) existing[key] = 'conflict';
+          else if (!existing[key] && record[key]) { existing[key] = record[key]; existing.messageID = record.messageID; }
+        }
+      }
+    }
+  }
+  return JSON.stringify({images:Array.from(images.values())});
 }
 if (operation === 'snapshot') {
   const assistants = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));

@@ -11,7 +11,8 @@ public struct Project: Codable, Identifiable, Equatable, Sendable {
     public var background: BackgroundOption?
     public var referenceIDs: [UUID] = []
     public var reasoning: ReasoningLevel?
-    public var imageModel: ImageModel?
+    public var imageModel: ImageModel? // Legacy request preference, never output identity.
+    public var generationMode: GenerationMode?
     public var layout: [String: CanvasPoint]?
     public var viewport: CanvasViewport?
     public init(name: String) { self.name = name }
@@ -28,6 +29,8 @@ public struct Asset: Codable, Identifiable, Equatable, Sendable {
     public var createdAt: Date
     public var isReference: Bool
     public var isFavorite: Bool
+    public var generationMetadata: ImageGenerationMetadata?
+    public var actualModelLabel: String { generationMetadata?.model?.label ?? "확인되지 않음" }
     public var jobID: UUID?
     public var parentID: UUID?
     public init(id: UUID = UUID(), projectID: UUID, filename: String, title: String,
@@ -78,10 +81,17 @@ public struct Job: Codable, Identifiable, Equatable, Sendable {
     public var error: String?
     public var results: [Asset] = []
     public var reasoning: ReasoningLevel?
-    public var imageModel: ImageModel?
+    public var imageModel: ImageModel? // Legacy request preference, never output identity.
+    public var generationMode: GenerationMode?
     public var dismissedAttentionState: JobState?
     public var showsAttention: Bool { state.needsAttention && dismissedAttentionState != state }
-    public var requestedModel: ImageModel { imageModel ?? (reasoning == nil || reasoning == .standard ? .sunburst : .flare) }
+    public var requestedImageCount: Int?
+    public var inputPrompt: String?
+    public var requestedAspect: String?
+    public var requestedBackground: BackgroundOption?
+    public var expectedImageCount: Int { requestedImageCount ?? 1 }
+    public var requestModeLabel: String { generationMode?.label ?? "이전 요청" }
+    public var executionReasoning: ReasoningLevel { generationMode?.reasoning ?? reasoning ?? .light }
     public var appliedReasoning: Int?
     public var continuationOf: UUID?
     public var responseText: String?
@@ -105,6 +115,7 @@ public struct Library: Codable, Sendable {
     public var projects: [Project] = []
     public var assets: [Asset] = []
     public var preferredModel: ImageModel?
+    public var preferredGenerationMode: GenerationMode?
     public var recipes: [Recipe]?
     public var hiddenAssetIDs: [UUID]?
     public init() {}

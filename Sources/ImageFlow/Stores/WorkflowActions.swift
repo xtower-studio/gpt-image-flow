@@ -7,21 +7,22 @@ extension WorkspaceStore {
         if !project.referenceIDs.contains(asset.id) { project.referenceIDs.append(asset.id); updateProject(project) }
         notice = "참조에 추가했습니다."
     }
-    func enqueueFollowup(to original: Job, text: String, model: ImageModel) throws {
+    func enqueueFollowup(to original: Job, text: String, mode: GenerationMode) throws {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, original.conversationID != nil else { throw FlowError.message("대화를 확인하고 후속 요청을 입력해 주세요.") }
         guard !jobs.contains(where: { $0.conversationID == original.conversationID && ($0.state.isRunning || $0.state == .queued) }) else {
             throw FlowError.message("이 대화의 이전 요청이 끝나면 이어서 보낼 수 있습니다.")
         }
-        var job = Job(batchID: UUID(), projectID: original.projectID, prompt: text, label: "후속 요청", referenceIDs: [])
-        job.conversationID = original.conversationID; job.continuationOf = original.id; job.imageModel = model; job.reasoning = model.reasoning
+        var job = Job(batchID: UUID(), projectID: original.projectID, prompt: text + "\nn=\(mode.imagesPerRequest)", label: "후속 요청", referenceIDs: [])
+        job.conversationID = original.conversationID; job.continuationOf = original.id; job.generationMode = mode; job.reasoning = mode.reasoning
+        job.requestedImageCount = mode.imagesPerRequest; job.inputPrompt = text
         reserveCanvasPositions(for: [job]); journal.jobs.append(job); try persist()
     }
     func saveRecipe(project: Project, name: String) {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return }
         if library.recipes == nil { library.recipes = [] }
-        var settings = project; settings.imageModel = selectedImageModel
+        var settings = project; settings.generationMode = selectedGenerationMode
         library.recipes?.append(Recipe(name: name, settings: settings)); flush()
         notice = "레시피를 저장했습니다."
     }
@@ -31,7 +32,8 @@ extension WorkspaceStore {
         project.prompt = settings.prompt; project.variations = settings.variations
         project.copies = settings.copies; project.aspect = settings.aspect; project.reasoning = settings.reasoning
         project.background = settings.background; project.imageModel = settings.imageModel
-        if let model = settings.imageModel { selectedImageModel = model }
+        project.generationMode = settings.generationMode
+        selectedGenerationMode = settings.generationMode ?? .migrated(from: settings.imageModel)
         project.referenceIDs = settings.referenceIDs.filter { asset($0) != nil }
         updateProject(project); notice = "\(recipe.name) 레시피를 적용했습니다."
     }
@@ -68,14 +70,14 @@ extension WorkspaceStore {
                 positions[asset.id.uuidString] = asset.jobID.flatMap { positions[$0.uuidString] } ?? CanvasPoint(x: Double(index%4)*304, y: Double(index/4)*407)
             }
             let bottom = positions.values.map(\.y).max() ?? -407
-            let batchPeers = newJobs.prefix { $0.id != job.id }.filter { $0.projectID == job.projectID }
-            let column = batchPeers.count % 4
-            let y: Double
-            if column > 0, let first = batchPeers.last, let previous = positions[first.id.uuidString] { y = previous.y }
-            else { y = bottom + 407 }
-            positions[job.id.uuidString] = CanvasPoint(x: Double(column)*304, y: y)
+            positions[job.id.uuidString] = CanvasPoint(x: 0, y: bottom + 407)
             project.layout = positions; updateProject(project)
         }
+    }
+    func placeResult(_ asset: Asset, job: Job, index: Int) {
+        guard let project = project(job.projectID), project.layout?[asset.id.uuidString] == nil else { return }
+        let origin = project.layout?[job.id.uuidString] ?? CanvasPoint(x: 0, y: 0)
+        setCanvasPositions([asset.id.uuidString: CanvasPoint(x: origin.x + Double(index % 4) * 304, y: origin.y + Double(index / 4) * 407)], projectID: job.projectID)
     }
     func setCanvasPositions(_ positions: [String: CanvasPoint], projectID: UUID, undoable: Bool = false) {
         guard var project = project(projectID) else { return }

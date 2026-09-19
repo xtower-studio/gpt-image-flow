@@ -88,6 +88,10 @@ enum WorkerError: LocalizedError {
     struct Ack: Decodable { let ok: Bool }
     struct AttachmentState: Decodable { let count: Int; let busy: Bool; let sendEnabled: Bool }
     struct ReasoningResult: Decodable { let level: Int; let label: String }
+    struct MetadataEnvelope: Decodable { let images: [ImageGenerationMetadata] }
+    func generationMetadata() async throws -> [ImageGenerationMetadata] {
+        try await call("generationMetadata", as: MetadataEnvelope.self).images
+    }
     struct Download: Decodable { let base64: String; let mime: String; let size: Int }
     func snapshot() async throws -> WebSnapshot { try await call("snapshot", as: WebSnapshot.self) }
     func wait(_ seconds: Double = 1) async throws { try Task.checkCancellation(); try await Task.sleep(for: .seconds(seconds)); try Task.checkCancellation() }
@@ -111,7 +115,11 @@ enum WorkerError: LocalizedError {
     }
     func prepare(job: Job, files: [URL]) async throws -> WebSnapshot {
         try await load(job.continuationOf != nil ? job.conversationID : nil)
-        _ = try await call("type", payload: ["prompt": job.prompt], as: Ack.self)
+        do {
+            _ = try await call("composeImage", payload: ["prompt": job.prompt], as: Ack.self)
+        } catch {
+            throw WorkerError.website("이미지 만들기 도구를 입력창에 적용하지 못해 전송하지 않았습니다. ChatGPT 연결 창을 확인해 주세요.")
+        }
         try await wait(0.4)
         if !files.isEmpty {
             guard files.allSatisfy({ FileManager.default.fileExists(atPath: $0.path) }) else { throw WorkerError.attachment }
@@ -127,12 +135,7 @@ enum WorkerError: LocalizedError {
             pendingFiles = []
             guard confirmed else { throw WorkerError.attachment }
         }
-        do {
-            _ = try await call("imageMode", as: Ack.self)
-        } catch {
-            throw WorkerError.website("이미지 만들기 모드를 선택하지 못해 전송하지 않았습니다. ChatGPT 연결 창을 확인해 주세요.")
-        }
-        try await applyReasoning(job.requestedModel.reasoning)
+        try await applyReasoning(job.executionReasoning)
         _ = try await call("verifyImageMode", as: Ack.self)
         let deadline = Date().addingTimeInterval(15)
         while Date() < deadline {
@@ -148,10 +151,10 @@ enum WorkerError: LocalizedError {
             if try await call("openReasoning", as: Ack.self).ok { opened = true; break }
             try await wait(0.3)
         }
-        guard opened else { throw WorkerError.website("모델 설정을 찾을 수 없어 요청을 보내지 않았습니다. 연결 창에서 ChatGPT 화면을 확인해 주세요.") }
+        guard opened else { throw WorkerError.website("생성 방식 설정을 찾을 수 없어 요청을 보내지 않았습니다. 연결 창에서 ChatGPT 화면을 확인해 주세요.") }
         try await wait(0.3)
         let result = try await call("setReasoning", payload: ["level": level.rawValue], as: ReasoningResult.self)
-        guard result.level == level.rawValue else { throw WorkerError.website("모델 적용을 확인하지 못해 전송하지 않았습니다.") }
+        guard result.level == level.rawValue else { throw WorkerError.website("생성 방식 적용을 확인하지 못해 전송하지 않았습니다.") }
         appliedReasoning = result.level
         try await wait(0.2)
     }

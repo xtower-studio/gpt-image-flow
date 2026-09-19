@@ -51,9 +51,9 @@ struct JobResponseView: View {
                     }.background(StudioPalette.field, in: RoundedRectangle(cornerRadius: 8))
                         .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(StudioPalette.line) }
                     VStack(alignment: .leading, spacing: 12) {
-                        ImageModelControl(selection: Binding(get: { store.selectedImageModel }, set: { store.selectedImageModel = $0 }))
-                        Button("후속 요청 보내기") {
-                            do { try store.enqueueFollowup(to: job, text: followup, model: store.selectedImageModel); followup = ""; store.notice = "후속 요청을 대기열에 추가했습니다." }
+                        GenerationModeControl(selection: Binding(get: { store.selectedGenerationMode }, set: { store.selectedGenerationMode = $0 }))
+                        Button("\(store.selectedGenerationMode.imagesPerRequest)개 이미지 요청") {
+                            do { try store.enqueueFollowup(to: job, text: followup, mode: store.selectedGenerationMode); followup = ""; store.notice = "후속 요청을 대기열에 추가했습니다." }
                             catch { store.report(error) }
                         }.buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(followup.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }

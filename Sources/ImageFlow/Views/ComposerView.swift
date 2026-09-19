@@ -25,6 +25,7 @@ struct ComposerView: View {
         let lines = current.variations.split(separator: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
         return lines.isEmpty ? current.copies : lines.count
     }
+    private var totalImages: Int { count * store.selectedGenerationMode.imagesPerRequest }
     private var prompt: Binding<String> { editing == nil ? binding(\.prompt) : $editPrompt }
     private var canGenerate: Bool { store.storageReady && !store.importing && !prompt.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && count <= 50 }
     private func binding<Value>(_ path: WritableKeyPath<Project, Value>) -> Binding<Value> {
@@ -57,12 +58,7 @@ struct ComposerView: View {
                             .overlay { RoundedRectangle(cornerRadius: 6).strokeBorder(editorFocused ? Color.accentColor : Color.primary.opacity(0.16), lineWidth: editorFocused ? 2 : 1) }
                     }
                     VStack(spacing: 14) {
-                        HStack {
-                            Text("모델")
-                            Spacer()
-                            ImageModelControl(selection: Binding(get: { store.selectedImageModel }, set: { store.selectedImageModel = $0 }))
-                                .labelsHidden().frame(width: 165)
-                        }
+                        GenerationModeControl(selection: Binding(get: { store.selectedGenerationMode }, set: { store.selectedGenerationMode = $0 }))
                         HStack {
                             Text("화면 비율")
                             Spacer()
@@ -76,18 +72,18 @@ struct ComposerView: View {
                             }.labelsHidden().frame(width: 165)
                         }
                         HStack {
-                            Text("시안 개수")
+                            Text("요청 횟수")
                             Spacer()
-                            TextField("시안 개수", value: Binding(get: { count }, set: { value in var copy = current; copy.copies = min(50, max(1, value)); store.updateProject(copy) }), format: .number.grouping(.never))
-                                .textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing).frame(width: 52).monospacedDigit().accessibilityLabel("시안 개수 입력")
-                            Text("개").foregroundStyle(.secondary)
-                            Stepper("시안 개수", value: binding(\.copies), in: 1...50).labelsHidden().fixedSize()
+                            TextField("요청 횟수", value: Binding(get: { count }, set: { value in var copy = current; copy.copies = min(50, max(1, value)); store.updateProject(copy) }), format: .number.grouping(.never))
+                                .textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing).frame(width: 52).monospacedDigit().accessibilityLabel("요청 횟수 입력")
+                            Text("회").foregroundStyle(.secondary)
+                            Stepper("요청 횟수", value: binding(\.copies), in: 1...50).labelsHidden().fixedSize()
                         }.disabled(editing != nil || !current.variations.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }.padding(.vertical, 2)
                     Divider()
-                    DisclosureGroup("시안별 변형", isExpanded: $showVariations) {
+                    DisclosureGroup("요청별 변형", isExpanded: $showVariations) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("공통 프롬프트에 더할 내용을 한 줄씩 적으세요. 각 줄이 하나의 시안이 됩니다.").font(.callout).foregroundStyle(.secondary)
+                            Text("공통 프롬프트에 더할 내용을 한 줄씩 적으세요. 각 줄을 별도 요청으로 보냅니다. 요청마다 선택한 방식의 장수만큼 생성합니다.").font(.callout).foregroundStyle(.secondary)
                             TextEditor(text: binding(\.variations)).font(.system(size: 13)).frame(height: 90).padding(5).background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6)).overlay { RoundedRectangle(cornerRadius: 6).strokeBorder(.quaternary) }
                         }.padding(.top, 10)
                     }.disabled(editing != nil)
@@ -95,13 +91,15 @@ struct ComposerView: View {
             }
             Divider()
             VStack(spacing: 10) {
+                Text("\(count)회 요청 × \(store.selectedGenerationMode.imagesPerRequest)장 = 총 \(totalImages)장")
+                    .font(.system(size: 12)).foregroundStyle(.secondary).monospacedDigit().accessibilityIdentifier("generation-total")
                 Button(action: generate) {
-                    HStack { Image(systemName: "sparkles"); Text(editing == nil ? "\(count)개 이미지 생성" : "수정본 생성").fontWeight(.semibold); Spacer(); Text("⌘ ↵").font(.system(size: 12)).opacity(0.8) }.frame(maxWidth: .infinity).padding(.vertical, 3)
+                    HStack { Image(systemName: "sparkles"); Text(editing == nil ? "\(totalImages)개 이미지 생성" : "\(totalImages)개 수정본 생성").fontWeight(.semibold); Spacer(); Text("⌘ ↵").font(.system(size: 12)).opacity(0.8) }.frame(maxWidth: .infinity).padding(.vertical, 3)
                 }.buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(!canGenerate)
                 HStack(spacing: 5) {
                     if store.importing { ProgressView().controlSize(.mini); Text("참조 이미지 가져오는 중…") }
                     else if store.journal.paused { Image(systemName: "pause.circle"); Text("대기열 일시정지 · 작업 탭에서 계속") }
-                    else { Image(systemName: engine.eco ? "leaf" : "square.stack.3d.up"); Text(engine.eco ? "절전 모드 · 1개씩 생성" : "최대 3개 동시 생성") }
+                    else { Image(systemName: engine.eco ? "leaf" : "square.stack.3d.up"); Text(engine.eco ? "절전 모드 · 요청 1개씩 실행" : "최대 3개 요청 동시 실행") }
                 }.font(.system(size: 11)).foregroundStyle(.secondary)
             }.padding(16)
         }
@@ -172,11 +170,11 @@ struct ComposerView: View {
     }
     private func generate() {
         var request = current
-        request.imageModel = store.selectedImageModel
+        request.generationMode = store.selectedGenerationMode
         if let editing { request.prompt = editPrompt; request.variations = ""; request.copies = 1; request.referenceIDs = [editing.id] + current.referenceIDs.filter { $0 != editing.id } }
         do {
             try store.enqueue(project: request, parentID: editing?.id)
-            store.notice = "\(count)개 요청을 추가했습니다. 작업 탭에서 진행 상태를 확인할 수 있습니다."
+            store.notice = "\(count)회 요청 · 총 \(totalImages)장 생성을 추가했습니다. 작업 탭에서 진행 상태를 확인할 수 있습니다."
             if session.status != .ready { session.connect() }
             if editing != nil { editPrompt = ""; editing = nil }
         } catch { store.report(error) }

@@ -32,7 +32,7 @@ struct ComposerView: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: 18) {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             PanelSectionHeading(title: editing == nil ? "프롬프트" : "수정할 내용")
@@ -52,29 +52,29 @@ struct ComposerView: View {
                         countLocked: editing != nil || !current.variations.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     DisclosureGroup(isExpanded: $showVariations) {
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("한 줄마다 별도 요청으로 보냅니다. 공통 프롬프트에 더할 내용을 적으세요.").font(.system(size: 11)).foregroundStyle(.secondary)
-                            TextEditor(text: binding(\.variations)).font(.system(size: 12)).scrollContentBackground(.hidden)
+                            Text("한 줄마다 별도 요청으로 보냅니다. 공통 프롬프트에 더할 내용을 적으세요.").font(StudioTypography.supporting).foregroundStyle(.secondary)
+                            TextEditor(text: binding(\.variations)).font(StudioTypography.body).scrollContentBackground(.hidden)
                                 .frame(height: 90).padding(10).panelSurface(radius: 14, editor: true).accessibilityLabel("요청별 변형 입력")
                         }.padding(.top, 12)
-                    } label: { Text("요청별 변형").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary) }
+                    } label: { Text("요청별 변형").font(StudioTypography.control) }
                     .disabled(editing != nil)
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 18)
             }.panelScrollEdges()
             VStack(spacing: 10) {
                 HStack {
-                    Text("총 \(totalImages)장").font(.system(size: 12, weight: .semibold))
+                    Text("총 \(totalImages)장").font(StudioTypography.section)
                     Spacer()
-                    Text("\(count)회 요청 × \(store.selectedGenerationMode.imagesPerRequest)장").font(.system(size: 11)).foregroundStyle(.secondary)
+                    Text("\(count)회 요청 × \(store.selectedGenerationMode.imagesPerRequest)장").font(StudioTypography.metadata).foregroundStyle(.secondary)
                 }.monospacedDigit().accessibilityElement(children: .ignore)
                     .accessibilityLabel("\(count)회 요청 × \(store.selectedGenerationMode.imagesPerRequest)장 = 총 \(totalImages)장").accessibilityIdentifier("generation-total")
                 Button(action: generate) {
-                    HStack { Image(systemName: "sparkles"); Text(editing == nil ? "\(totalImages)개 이미지 생성" : "\(totalImages)개 수정본 생성").fontWeight(.semibold); Spacer(); Text("⌘↵").font(.system(size: 11, weight: .medium, design: .rounded)).opacity(0.65) }.frame(maxWidth: .infinity).padding(.vertical, 5)
+                    HStack { Image(systemName: "sparkles"); Text(editing == nil ? "\(totalImages)개 이미지 생성" : "\(totalImages)개 수정본 생성").font(StudioTypography.action); Spacer(); Text("⌘↵").font(StudioTypography.metadata).opacity(0.65) }.frame(maxWidth: .infinity).padding(.vertical, 5)
                 }.studioActionButton(prominent: true).buttonBorderShape(.capsule).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(!canGenerate)
                 HStack(spacing: 5) {
                     if store.importing { ProgressView().controlSize(.mini); Text("참조 이미지 가져오는 중…") }
                     else if store.journal.paused { Image(systemName: "pause.circle"); Text("대기열 일시정지 · 작업 탭에서 계속") }
                     else { Image(systemName: engine.eco ? "leaf" : "square.stack.3d.up"); Text(engine.eco ? "절전 모드 · 요청 1개씩 실행" : "최대 3개 요청 동시 실행") }
-                }.font(.system(size: 11)).foregroundStyle(.secondary)
+                }.font(StudioTypography.metadata).foregroundStyle(.secondary)
             }.padding(16)
         }
         .alert("레시피 저장", isPresented: $savingRecipe) {

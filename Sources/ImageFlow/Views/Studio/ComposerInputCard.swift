@@ -17,11 +17,11 @@ struct ComposerInputCard: View {
             ZStack(alignment: .topLeading) {
                 if text.isEmpty {
                     Text(originalID == nil ? "어떤 이미지를 만들까요?\n피사체, 분위기, 빛과 색을 설명해 주세요." : "바꿀 부분과 유지할 부분을 설명해 주세요.")
-                        .font(.system(size: 13)).lineSpacing(5).foregroundStyle(.tertiary)
+                        .font(StudioTypography.body).lineSpacing(StudioTypography.lineSpacing).foregroundStyle(.secondary)
                         .padding(.horizontal, 14).padding(.top, 16).allowsHitTesting(false)
                 }
                 DropTextEditor(text: $text, onFiles: importFiles, onFocusChanged: { focused = $0 }, focusRequest: focusRequest)
-                    .frame(height: 112).padding(8).accessibilityLabel("이미지 프롬프트")
+                    .frame(height: 96).padding(8).accessibilityLabel("이미지 프롬프트")
             }
             Divider().padding(.horizontal, 14)
             referenceStrip
@@ -32,8 +32,8 @@ struct ComposerInputCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "paperclip").font(.system(size: 12))
-                Text("참조 이미지").font(.system(size: 11, weight: .medium))
-                Text(references.isEmpty ? "선택 사항" : "\(references.count)개").font(.system(size: 11)).foregroundStyle(.tertiary)
+                Text("참조 이미지").font(StudioTypography.control).foregroundStyle(.primary)
+                Text(references.isEmpty ? "선택 사항" : "\(references.count)개").font(StudioTypography.metadata).foregroundStyle(.secondary)
                 Spacer(minLength: 0)
                 Button(action: add) { Image(systemName: "plus").font(.system(size: 12, weight: .medium)).frame(width: 24, height: 24).contentShape(Circle()) }
                     .buttonStyle(.plain).help("참조 이미지 추가 · ⌘O").accessibilityLabel("참조 이미지 추가")
@@ -57,7 +57,7 @@ struct ComposerInputCard: View {
                 }
             } else {
                 Button("이미지를 이 영역에 놓거나 추가하세요", action: add)
-                    .font(.system(size: 11)).foregroundStyle(.secondary).buttonStyle(.plain)
+                    .font(StudioTypography.supporting).foregroundStyle(.secondary).buttonStyle(.plain)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }.padding(.horizontal, 14).padding(.vertical, 10)

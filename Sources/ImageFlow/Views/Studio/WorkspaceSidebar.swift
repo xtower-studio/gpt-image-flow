@@ -17,10 +17,10 @@ struct WorkspaceSidebar: View {
                     ForEach(store.library.projects) { project in
                         HStack(spacing: 9) {
                             projectCover(project)
-                            Text(project.name).lineLimit(1)
+                            Text(project.name).font(StudioTypography.item).lineLimit(1)
                             Spacer(minLength: 2)
                             let count = store.library.assets.filter { $0.projectID == project.id && !$0.isReference && !(store.library.hiddenAssetIDs ?? []).contains($0.id) }.count
-                            Text("\(count)").font(.system(size: 11)).monospacedDigit().foregroundStyle(.secondary)
+                            Text("\(count)").font(StudioTypography.metadata).monospacedDigit().foregroundStyle(.secondary)
                         }.padding(.vertical, 4).tag(project.id)
                             .help(project.name)
                             .contextMenu { Button("이름 변경…") { rename(project) }; Button("새 프로젝트…", action: addProject) }
@@ -33,8 +33,8 @@ struct WorkspaceSidebar: View {
                 HStack(spacing: 8) {
                     Circle().fill(session.status == .ready ? Color.green : Color.orange).frame(width: 6, height: 6)
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("ChatGPT").font(.system(size: 12, weight: .medium))
-                        Text(engine.activeCount > 0 ? "\(engine.activeCount)개 요청 진행 중" : session.status == .ready ? "연결됨" : "로그인 필요").font(.system(size: 11)).foregroundStyle(.secondary)
+                        Text("ChatGPT").font(StudioTypography.control)
+                        Text(engine.activeCount > 0 ? "\(engine.activeCount)개 요청 진행 중" : session.status == .ready ? "연결됨" : "로그인 필요").font(StudioTypography.metadata).foregroundStyle(.secondary)
                     }
                     Spacer()
                     Menu {

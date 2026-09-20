@@ -150,7 +150,7 @@ struct WorkspaceView: View {
                     Button { store.dismissAttention(Set(attention.map(\.id))) } label: { Image(systemName: "xmark") }
                         .buttonStyle(.borderless).help("확인 알림 닫기 · 작업 기록은 유지됩니다").accessibilityLabel("확인 알림 닫기")
                 }
-            }.font(.system(size: 12)).padding(.horizontal, 20).frame(height: 36).background(.bar)
+            }.font(StudioTypography.supporting).padding(.horizontal, 20).frame(height: 36).background(.bar)
             Divider()
         }
     }
@@ -175,13 +175,13 @@ struct WorkspaceView: View {
                     Image(systemName: "photo").font(.system(size: 15)).foregroundStyle(.secondary)
                 }.padding(.horizontal, 14).frame(height: 36).studioGlass()
             }
-        }.buttonStyle(.borderless).font(.system(size: 12)).padding(.horizontal, 16).padding(.vertical, 10)
+        }.buttonStyle(.borderless).font(StudioTypography.supporting).padding(.horizontal, 16).padding(.vertical, 10)
     }
     @ViewBuilder private var notice: some View {
         if let text = store.notice {
             HStack(spacing: 10) {
                 Image(systemName: "checkmark.circle").foregroundStyle(.secondary)
-                Text(text).font(.callout).lineLimit(3)
+                Text(text).font(StudioTypography.supporting).lineLimit(3)
                 if !store.lastHiddenAssets.isEmpty { Button("되돌리기", action: store.undoHide) }
                 Button { store.notice = nil } label: { Image(systemName: "xmark") }.buttonStyle(.plain).help("알림 닫기")
             }.padding(.horizontal, 16).padding(.vertical, 12).studioGlass(cornerRadius: 20).frame(maxWidth: 480).padding(.bottom, 66).padding(.horizontal, 20)

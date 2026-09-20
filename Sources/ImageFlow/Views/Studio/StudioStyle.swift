@@ -44,6 +44,6 @@ struct SectionCaption: View {
     let title: String
     var trailing: String? = nil
     var body: some View {
-        HStack { Text(title).font(.system(size: 13, weight: .semibold)); Spacer(); if let trailing { Text(trailing).font(.system(size: 10)).monospacedDigit() } }.foregroundStyle(.secondary)
+        HStack { Text(title).font(StudioTypography.section).foregroundStyle(.primary); Spacer(); if let trailing { Text(trailing).font(StudioTypography.metadata).monospacedDigit() } }.foregroundStyle(.secondary)
     }
 }

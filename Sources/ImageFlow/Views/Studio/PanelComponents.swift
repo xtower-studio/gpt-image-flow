@@ -5,10 +5,10 @@ struct PanelSectionHeading: View {
     var note: String? = nil
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(title).font(.system(size: 12, weight: .semibold))
+            Text(title).font(StudioTypography.section).foregroundStyle(.primary)
             Spacer(minLength: 8)
-            if let note { Text(note).font(.system(size: 11)).foregroundStyle(.tertiary) }
-        }.foregroundStyle(.secondary)
+            if let note { Text(note).font(StudioTypography.metadata).foregroundStyle(.secondary) }
+        }
     }
 }
 
@@ -38,7 +38,7 @@ struct StudioPanelTabs: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private func tabLabel(_ tab: StudioPanelTab) -> some View {
         Label(tab.rawValue, systemImage: tab.symbol)
-            .font(.system(size: 12, weight: selection == tab ? .semibold : .medium))
+            .font(StudioTypography.control.weight(selection == tab ? .semibold : .medium))
             .foregroundStyle(selection == tab ? Color.primary : Color.secondary)
             .frame(maxWidth: .infinity).frame(height: 34).contentShape(Capsule())
     }
@@ -54,7 +54,7 @@ struct StudioPanelTabs: View {
                         .accessibilityIdentifier("studio-panel-\(tab.rawValue)")
                 }
             }
-        }.padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 14)
+        }.padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 12)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.16), value: selection)
     }
 }

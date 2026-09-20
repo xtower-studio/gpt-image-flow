@@ -26,14 +26,14 @@ struct ComposerOptions: View {
                 }
             }
             HStack {
-                Text("요청 횟수").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
+                Text("요청 횟수").font(StudioTypography.control)
                 Spacer()
                 HStack(spacing: 2) {
                     Button { count = max(1, count - 1) } label: { Image(systemName: "minus").frame(width: 28, height: 30).contentShape(Rectangle()) }.disabled(count <= 1).accessibilityLabel("요청 횟수 줄이기")
                     TextField("요청 횟수", value: $count, format: .number.grouping(.never))
                         .textFieldStyle(.plain).multilineTextAlignment(.center).frame(width: 32).monospacedDigit().accessibilityLabel("요청 횟수 입력")
                     Button { count = min(50, count + 1) } label: { Image(systemName: "plus").frame(width: 28, height: 30).contentShape(Rectangle()) }.disabled(count >= 50).accessibilityLabel("요청 횟수 늘리기")
-                }.buttonStyle(.plain).font(.system(size: 12, weight: .medium)).panelSurface(radius: 12).disabled(countLocked)
+                }.buttonStyle(.plain).font(StudioTypography.item).panelSurface(radius: 12).disabled(countLocked)
             }.padding(.top, 2)
         }
     }
@@ -45,9 +45,9 @@ private struct OptionTile<Content: View>: View {
     @ViewBuilder var content: () -> Content
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(title, systemImage: symbol).font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+            Label(title, systemImage: symbol).font(StudioTypography.metadata).foregroundStyle(.secondary)
             content().menuStyle(.borderlessButton).menuIndicator(.visible)
-                .font(.system(size: 13, weight: .medium)).frame(maxWidth: .infinity, alignment: .leading)
+                .font(StudioTypography.item).frame(maxWidth: .infinity, alignment: .leading)
         }.padding(12).frame(minWidth: 0, maxWidth: .infinity, alignment: .leading).panelSurface(radius: 16)
     }
 }

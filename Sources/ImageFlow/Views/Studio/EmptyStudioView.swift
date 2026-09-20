@@ -14,7 +14,7 @@ struct EmptyStudioView: View {
             }.frame(height: 110).accessibilityHidden(true)
             VStack(spacing: 9) {
                 Text(filtered ? "검색 결과가 없습니다" : running ? "첫 이미지를 만들고 있습니다" : "첫 아이디어를 펼쳐 보세요").font(.system(size: 20, weight: .semibold))
-                Text(filtered ? "다른 검색어나 후보 필터를 사용해 보세요." : running ? "다른 아이디어를 준비하는 동안\n완료된 이미지가 여기에 나타납니다." : "오른쪽에서 참조를 추가하거나 장면을 설명하세요.\n만든 시안을 함께 보고, 다음 방향으로 이어갈 수 있습니다.").font(.system(size: 13)).foregroundStyle(.secondary).multilineTextAlignment(.center).lineSpacing(4)
+                Text(filtered ? "다른 검색어나 후보 필터를 사용해 보세요." : running ? "다른 아이디어를 준비하는 동안\n완료된 이미지가 여기에 나타납니다." : "오른쪽에서 참조를 추가하거나 장면을 설명하세요.\n만든 시안을 함께 보고, 다음 방향으로 이어갈 수 있습니다.").font(StudioTypography.body).foregroundStyle(.secondary).multilineTextAlignment(.center).lineSpacing(4)
             }
             if filtered { Button("필터 지우기", action: clear) }
             else if running { ProgressView().controlSize(.small) }

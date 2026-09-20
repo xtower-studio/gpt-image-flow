@@ -144,7 +144,7 @@ final class ImageCollectionView: NSCollectionView {
             let target = available < 470 ? min(preferredSize, 180) : preferredSize
             let count = max(1, floor((available + 18) / (target + 18)))
             let width = floor((available - (count - 1) * 18) / count)
-            let size = NSSize(width: width, height: width + 50)
+            let size = NSSize(width: width, height: width + 56)
             if layout.itemSize != size {
                 layout.itemSize = size; layout.minimumInteritemSpacing = 18; layout.minimumLineSpacing = 22
                 layout.sectionInset = NSEdgeInsets(top: 20, left: 20, bottom: 24, right: 20); layout.invalidateLayout()
@@ -211,8 +211,8 @@ struct CollectionImageCell: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14))
             HStack(alignment: .center, spacing: 6) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(asset.title).font(.system(size: 12, weight: .medium)).lineLimit(1).foregroundStyle(selected ? Color.accentColor : .primary)
-                    Text("\(asset.width) × \(asset.height) · \(asset.actualModelLabel)").font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+                    Text(asset.title).font(StudioTypography.item).lineLimit(1).foregroundStyle(selected ? Color.accentColor : .primary)
+                    Text("\(asset.width) × \(asset.height) · \(asset.actualModelLabel)").font(StudioTypography.metadata).foregroundStyle(.secondary).lineLimit(1)
                 }
                 Spacer(minLength: 0)
                 if hovered || selected {

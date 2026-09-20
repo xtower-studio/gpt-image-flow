@@ -33,9 +33,9 @@ struct AssetTile: View {
                 }
                 .onDrag { NSItemProvider(object: store.vault.original(asset) as NSURL) }
             HStack(alignment: .firstTextBaseline) {
-                Text(asset.title).font(.system(size: 12, weight: .medium)).lineLimit(1)
+                Text(asset.title).font(StudioTypography.item).lineLimit(1)
                 Spacer(minLength: 4)
-                Text("\(asset.width) × \(asset.height)").font(.system(size: 11)).monospacedDigit().foregroundStyle(.secondary)
+                Text("\(asset.width) × \(asset.height)").font(StudioTypography.metadata).monospacedDigit().foregroundStyle(.secondary)
             }
             HStack(spacing: 3) {
                 StudioIconButton(symbol: "arrow.up.left.and.arrow.down.right", label: "크게 보기 · Space", action: { preview?() })

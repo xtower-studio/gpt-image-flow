@@ -11,12 +11,12 @@ struct TaskHistoryView: View {
         VStack(spacing: 0) {
             HStack {
                 if selectedJobID != nil { Button { selectedJobID = nil } label: { Label("모든 작업", systemImage: "chevron.left") }.buttonStyle(.borderless) }
-                else { Text("작업 기록").font(.system(size: 15, weight: .semibold)) }
+                else { Text("작업 기록").font(StudioTypography.title) }
                 Spacer()
                 Button(action: engine.pauseOrResume) { Image(systemName: store.journal.paused ? "play" : "pause") }.help(store.journal.paused ? "대기열 계속" : "대기열 일시정지").studioActionButton().buttonBorderShape(.circle)
             }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 16)
             if store.journal.paused {
-                Label(store.journal.pauseReason ?? "대기열이 일시정지되었습니다", systemImage: "pause.circle").font(.callout).foregroundStyle(.orange).padding(.horizontal, 16).padding(.bottom, 12)
+                Label(store.journal.pauseReason ?? "대기열이 일시정지되었습니다", systemImage: "pause.circle").font(StudioTypography.supporting).foregroundStyle(.orange).padding(.horizontal, 16).padding(.bottom, 12)
             }
             if let selectedJobID { ScrollView { JobResponseView(jobID: selectedJobID).id(selectedJobID) }.panelScrollEdges() }
             else if jobs.isEmpty {
@@ -30,9 +30,9 @@ struct TaskHistoryView: View {
                                     if let asset = job.results.first { AssetThumbnail(url: store.vault.thumbnail(asset), fit: false).frame(width: 46, height: 46).clipped().clipShape(RoundedRectangle(cornerRadius: 12)) }
                                     else { Image(systemName: symbol(job)).font(.system(size: 19)).foregroundStyle(job.state.needsAttention && job.state != .responded ? Color.orange : .secondary).frame(width: 46, height: 46).background(.quaternary.opacity(0.25), in: RoundedRectangle(cornerRadius: 12)) }
                                     VStack(alignment: .leading, spacing: 5) {
-                                        HStack { Text(job.label).fontWeight(.medium); Spacer(); Text(job.createdAt, style: .time).font(.caption).foregroundStyle(.secondary) }
-                                        Text("\(job.state.label) · \(job.results.count)/\(job.expectedImageCount)장").font(.caption).foregroundStyle(job.state == .failed ? Color.orange : .secondary)
-                                        Text(job.responseText ?? job.error ?? job.inputPrompt ?? job.prompt).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(2).multilineTextAlignment(.leading)
+                                        HStack { Text(job.label).font(StudioTypography.item).lineLimit(1); Spacer(); Text(job.createdAt, style: .time).font(StudioTypography.metadata).foregroundStyle(.secondary) }
+                                        Text("\(job.state.label) · \(job.results.count)/\(job.expectedImageCount)장").font(StudioTypography.metadata).foregroundStyle(job.state == .failed ? Color.orange : .secondary)
+                                        Text(job.responseText ?? job.error ?? job.inputPrompt ?? job.prompt).font(StudioTypography.supporting).foregroundStyle(.secondary).lineLimit(2).multilineTextAlignment(.leading)
                                     }
                                 }.contentShape(Rectangle()).padding(12).panelSurface(radius: 16)
                             }.buttonStyle(.plain)

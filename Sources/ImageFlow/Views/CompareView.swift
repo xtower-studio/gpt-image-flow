@@ -14,7 +14,7 @@ struct CompareView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                Text(assets.count == 1 ? assets[0].title : "\(assets.count)개 이미지 비교").font(.headline).lineLimit(1)
+                Text(assets.count == 1 ? assets[0].title : "\(assets.count)개 이미지 비교").font(StudioTypography.title).lineLimit(1)
                 Spacer()
                 Button { actualSize = false; zoom = max(1, zoom - 0.5) } label: { Image(systemName: "minus.magnifyingglass") }.disabled(!actualSize && zoom == 1).help("축소")
                 Menu(actualSize ? "100%" : zoom == 1 ? "맞춤" : "맞춤 × \(zoom.formatted())") {
@@ -45,15 +45,15 @@ struct CompareView: View {
                             }.background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 16)).clipShape(RoundedRectangle(cornerRadius: 16))
                             HStack {
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text(asset.title).font(.system(size: 13, weight: .medium)).lineLimit(1)
-                                    Text("\(asset.width) × \(asset.height) · \(asset.actualModelLabel)").font(.system(size: 11)).foregroundStyle(.secondary)
+                                    Text(asset.title).font(StudioTypography.item).lineLimit(1)
+                                    Text("\(asset.width) × \(asset.height) · \(asset.actualModelLabel)").font(StudioTypography.metadata).foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 Button { store.toggleFavorite(asset) } label: { Image(systemName: store.asset(asset.id)?.isFavorite == true ? "star.fill" : "star") }.help("후보 표시")
                                 Button { store.export([asset]) } label: { Image(systemName: "square.and.arrow.up") }.help("내보내기")
                             }.buttonStyle(.borderless)
                             if showPrompts, let job = store.jobs.first(where: { $0.id == asset.jobID }) {
-                                ScrollView { Text(job.prompt).font(.system(size: 12)).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }.frame(height: rows == 1 ? 76 : 46)
+                                ScrollView { Text(job.inputPrompt ?? job.prompt).font(StudioTypography.body).lineSpacing(StudioTypography.lineSpacing).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }.frame(height: rows == 1 ? 76 : 46)
                             }
                         }.frame(width: width, height: height)
                     }

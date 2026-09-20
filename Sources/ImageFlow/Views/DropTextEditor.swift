@@ -17,7 +17,9 @@ struct DropTextEditor: NSViewRepresentable {
         view.isAutomaticTextCompletionEnabled = false
         view.isAutomaticQuoteSubstitutionEnabled = false; view.isAutomaticDashSubstitutionEnabled = false
         view.isAutomaticTextReplacementEnabled = false; view.isAutomaticSpellingCorrectionEnabled = false
-        view.isRichText = false; view.drawsBackground = false; view.font = .systemFont(ofSize: 13)
+        view.isRichText = false; view.drawsBackground = false; view.font = .systemFont(ofSize: StudioTypography.bodySize)
+        let paragraph = NSMutableParagraphStyle(); paragraph.lineSpacing = StudioTypography.lineSpacing
+        view.defaultParagraphStyle = paragraph
         view.textColor = .labelColor; view.isVerticallyResizable = true; view.isHorizontallyResizable = false
         view.autoresizingMask = [.width]; view.textContainer?.widthTracksTextView = true
         view.textContainerInset = NSSize(width: 4, height: 7)

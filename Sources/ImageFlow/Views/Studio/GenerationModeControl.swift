@@ -16,15 +16,15 @@ struct GenerationModeControl: View {
                                 .background(selection == mode ? Color.accentColor.opacity(0.1) : Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
                             VStack(alignment: .leading, spacing: 5) {
                                 HStack(spacing: 6) {
-                                    Text(mode.label).font(.system(size: 12, weight: .semibold))
-                                    Text("\(mode.imagesPerRequest)장").font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+                                    Text(mode.label).font(StudioTypography.item)
+                                    Text("\(mode.imagesPerRequest)장").font(StudioTypography.metadata).foregroundStyle(.secondary)
                                         .padding(.horizontal, 6).padding(.vertical, 2).background(.primary.opacity(0.045), in: Capsule())
                                     Spacer(minLength: 0)
                                     Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.accentColor).opacity(selection == mode ? 1 : 0)
                                 }
-                                Text(description(mode)).font(.system(size: 11)).foregroundStyle(.secondary).lineSpacing(2).fixedSize(horizontal: false, vertical: true)
+                                Text(description(mode)).font(StudioTypography.supporting).foregroundStyle(.secondary).lineSpacing(2).fixedSize(horizontal: false, vertical: true)
                             }
-                        }.padding(10).frame(maxWidth: .infinity, alignment: .leading)
+                        }.padding(9).frame(maxWidth: .infinity, alignment: .leading)
                             .background(selection == mode ? Color.accentColor.opacity(0.065) : .clear, in: RoundedRectangle(cornerRadius: 14))
                             .contentShape(RoundedRectangle(cornerRadius: 14))
                     }.buttonStyle(.plain).accessibilityLabel(mode.label).accessibilityValue(selection == mode ? "선택됨" : "")
@@ -38,9 +38,9 @@ struct GenerationModeControl: View {
     }
     private func description(_ mode: GenerationMode) -> String {
         switch mode {
-        case .automatic: "4장 동시 생성 · 보통 Flare 2장 + Sunburst 2장"
-        case .sunburstExperimental: "2장 동시 생성 · 높은 확률로 Sunburst 사용"
-        case .instant: "가장 빠르고 저렴한 모델로 1장 생성"
+        case .automatic: "보통 Flare 2장 + Sunburst 2장"
+        case .sunburstExperimental: "높은 확률로 Sunburst 사용"
+        case .instant: "가장 빠르고 저렴한 모델"
         }
     }
 }

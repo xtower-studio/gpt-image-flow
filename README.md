@@ -2,7 +2,7 @@
 
 ChatGPT 이미지 생성의 참조 첨부 → 여러 시안 생성 → 비교 → 수정 → 내보내기를 하나로 연결하는 네이티브 macOS 앱.
 
-**0.7 Liquid Glass 버전.** SwiftUI/AppKit으로 작업 공간을 만들고, 작업이 진행되는 동안만 WKWebView를 사용한다. 앱 전용 ChatGPT 로그인 세션을 사용하며 API 키는 필요하지 않다. 자유 캔버스, 자동·Sunburst (실험)·Instant 생성 방식, 3개 요청 병렬 실행, 내부 이미지 재첨부, 텍스트 답변에 이어서 요청하기를 제공한다. 네이티브 도구 막대·이미지 컬렉션·크기 조절 패널을 사용한다. 키보드 선택, 초안 보존, 2×2 비교와 실행 취소를 제공한다. [0.4 UI 설계](docs/STUDIO_DESIGN.md)와 [0.2 기능 검증](docs/V02_WORKFLOW.md)을 참고한다.
+**0.8 Studio 패널 버전.** SwiftUI/AppKit으로 작업 공간을 만들고, 작업이 진행되는 동안만 WKWebView를 사용한다. 앱 전용 ChatGPT 로그인 세션을 사용하며 API 키는 필요하지 않다. 자유 캔버스, 자동·Sunburst (실험)·Instant 생성 방식, 3개 요청 병렬 실행, 내부 이미지 재첨부, 텍스트 답변에 이어서 요청하기를 제공한다. 네이티브 도구 막대·이미지 컬렉션·크기 조절 패널을 사용한다. 키보드 선택, 초안 보존, 2×2 비교와 실행 취소를 제공한다. [0.4 UI 설계](docs/STUDIO_DESIGN.md)와 [0.2 기능 검증](docs/V02_WORKFLOW.md)을 참고한다.
 
 ## 실행
 
@@ -20,7 +20,7 @@ Codex의 Run 버튼도 같은 명령을 실행한다. 결과 앱은 `dist/ImageF
 swift test                          # 제품 코드의 로컬 자동 테스트
 ```
 
-macOS 26 이상에서는 시스템 Liquid Glass와 커스텀 유리 컨트롤을 사용한다. macOS 14~15에서는 기존 재질로 표시한다. [디자인과 검증 기록](docs/V07_LIQUID_GLASS.md)을 참고한다. 빌드 스크립트는 실제 SDK 버전을 링크하고 검사하므로 앱 실행에는 위 스크립트를 사용한다.
+macOS 26 이상에서는 시스템 Liquid Glass와 커스텀 유리 컨트롤을 사용한다. macOS 14~15에서는 기존 재질로 표시한다. [패널 재설계와 검증 기록](docs/V08_PANEL_DESIGN.md), [Liquid Glass 도입 기록](docs/V07_LIQUID_GLASS.md)을 참고한다. 빌드 스크립트는 실제 SDK 버전을 링크하고 검사하므로 앱 실행에는 위 스크립트를 사용한다.
 
 최소 배포 대상은 macOS 14지만 실제 실행 검증은 개발 Mac의 macOS 27.2 / Apple Silicon에서만 했다. 현재 번들은 개발용이며 배포 서명·공증을 마치지 않았다.
 
@@ -66,6 +66,8 @@ ChatGPT 편집기에 **이미지 만들기 (`picture_v2`) Pill과 프롬프트�
 개발 스크립트는 `--dev-directory .runtime`으로 진단 명령과 상태 파일을 활성화한다. 앱을 직접 열면 이 기능은 비활성이다. `.runtime`은 Git에서 제외하며 계정 화면 진단 파일을 배포 자료에 포함하지 않는다.
 
 ## 관련 문서
+
+- [0.8 Studio 패널 재설계](docs/V08_PANEL_DESIGN.md)
 
 - [제품·구현 계획](IMPLEMENTATION_PLAN.md)
 - [0.6 생성 방식·모델 식별](docs/V06_GENERATION_MODES.md)

@@ -17,8 +17,8 @@ struct AssetTile: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .background(Color.primary.opacity(0.025))
             }.aspectRatio(compact ? 1 : 0.92, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: compact ? 7 : 10))
-                .overlay { RoundedRectangle(cornerRadius: compact ? 7 : 10).strokeBorder(selected ? Color.accentColor : StudioPalette.line, lineWidth: selected ? 2 : 0.5) }
+                .clipShape(RoundedRectangle(cornerRadius: compact ? 10 : 14))
+                .overlay { RoundedRectangle(cornerRadius: compact ? 10 : 14).strokeBorder(selected ? Color.accentColor : StudioPalette.line, lineWidth: selected ? 2 : 0.5) }
                 .overlay(alignment: .topLeading) {
                     if selected {
                         Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)).foregroundStyle(.white)

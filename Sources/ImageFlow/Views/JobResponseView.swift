@@ -21,7 +21,7 @@ struct JobResponseView: View {
                     Spacer()
                     if let url = job.conversationURL { Link(destination: url) { Image(systemName: "arrow.up.right.square") }.help("ChatGPT 대화 열기") }
                 }
-                DisclosureGroup("보낸 프롬프트") { Text(job.prompt).font(.callout).textSelection(.enabled).padding(.top, 8) }
+                DisclosureGroup("보낸 프롬프트") { Text(job.prompt).font(.callout).textSelection(.enabled).padding(.top, 8) }.padding(14).panelSurface()
                 if !job.results.isEmpty {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))]) { ForEach(job.results) { asset in AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 110) } }
                 }
@@ -44,23 +44,24 @@ struct JobResponseView: View {
                     }
                 } else if job.conversationID != nil && !job.state.isRunning && job.state != .queued {
                     Divider()
-                    Text("같은 대화에서 이어서 요청").font(.caption).foregroundStyle(.secondary)
+                    PanelSectionHeading(title: "같은 대화에서 이어서 요청")
                     ZStack(alignment: .topLeading) {
                         if followup.isEmpty { Text("어떻게 이어갈까요?\n수정하거나 생성할 내용을 적어 주세요.").font(.system(size: 12)).foregroundStyle(.tertiary).lineSpacing(4).padding(12).allowsHitTesting(false) }
                         DropTextEditor(text: $followup, onFiles: { _ in store.notice = "이미지를 첨부하려면 만들기 탭에서 참조를 추가해 주세요." }).frame(height: 112).padding(5)
-                    }.background(StudioPalette.field, in: RoundedRectangle(cornerRadius: 8))
-                        .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(StudioPalette.line) }
+                    }.panelSurface(editor: true)
                     VStack(alignment: .leading, spacing: 12) {
                         GenerationModeControl(selection: Binding(get: { store.selectedGenerationMode }, set: { store.selectedGenerationMode = $0 }))
-                        Button("\(store.selectedGenerationMode.imagesPerRequest)개 이미지 요청") {
+                        Button {
                             do { try store.enqueueFollowup(to: job, text: followup, mode: store.selectedGenerationMode); followup = ""; store.notice = "후속 요청을 대기열에 추가했습니다." }
                             catch { store.report(error) }
-                        }.buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(followup.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        } label: {
+                            Label("\(store.selectedGenerationMode.imagesPerRequest)개 이미지 요청", systemImage: "sparkles").frame(maxWidth: .infinity).padding(.vertical, 3)
+                        }.studioActionButton(prominent: true).buttonBorderShape(.capsule).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(followup.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
                 } else if job.state == .failed || job.state == .needsLogin {
                     Button("다시 준비") { if session.status != .ready { session.connect() }; engine.retryBeforeSubmission(job) }
                 }
-            }.padding(20)
+            }.padding(16)
         }
     }
 }

@@ -1,7 +1,10 @@
 import SwiftUI
 import FlowCore
 
-enum StudioPanelTab: String, CaseIterable { case create = "만들기", details = "정보", reply = "작업" }
+enum StudioPanelTab: String, CaseIterable {
+    case create = "만들기", details = "정보", reply = "작업"
+    var symbol: String { switch self { case .create: "square.and.pencil"; case .details: "info.circle"; case .reply: "clock" } }
+}
 
 struct StudioPanel: View {
     let project: Project
@@ -16,7 +19,7 @@ struct StudioPanel: View {
     @Environment(WorkspaceStore.self) private var store
     var body: some View {
         VStack(spacing: 0) {
-            Picker("작업 패널", selection: $tab) { ForEach(StudioPanelTab.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented).labelsHidden().padding(16)
+            StudioPanelTabs(selection: $tab)
             ZStack(alignment: .top) {
                 ComposerView(project: project, editing: $editing, editPrompt: $editPrompt, focusRequest: focusRequest)
                     .opacity(tab == .create ? 1 : 0).allowsHitTesting(tab == .create).disabled(tab != .create).accessibilityHidden(tab != .create)
@@ -34,12 +37,12 @@ struct StudioPanel: View {
             VStack(alignment: .leading, spacing: 20) {
                 Text("\(selectedAssets.count)개 이미지").font(.title3.bold())
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 84))]) {
-                    ForEach(selectedAssets) { asset in AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 90).clipShape(RoundedRectangle(cornerRadius: 5)) }
+                    ForEach(selectedAssets) { asset in AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 90).clipShape(RoundedRectangle(cornerRadius: 12)) }
                 }
-                Button("선택한 이미지 내보내기…") { store.export(selectedAssets) }.frame(maxWidth: .infinity)
+                Button { store.export(selectedAssets) } label: { Label("선택한 이미지 내보내기", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity) }.studioActionButton(prominent: true).controlSize(.large)
                 Button("모두 참조에 추가") { for asset in selectedAssets { store.attach(asset, to: project.id) }; tab = .create }
                 Text("한 장을 선택하면 프롬프트와 생성 설정을 볼 수 있습니다.").font(.callout).foregroundStyle(.secondary)
-            }.padding(20)
+            }.padding(16)
         }
     }
 }

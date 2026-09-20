@@ -149,9 +149,9 @@ struct FreeCanvasView: View {
                 }.padding(16).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
             Spacer(minLength: 0)
-        }.background(.background, in: RoundedRectangle(cornerRadius: 12))
-            .overlay { RoundedRectangle(cornerRadius: 12).stroke(selection.contains(node.id) ? Color.accentColor : Color.primary.opacity(0.13), lineWidth: selection.contains(node.id) ? 2 : 1) }
-            .clipShape(RoundedRectangle(cornerRadius: 12)).shadow(color: .black.opacity(0.08), radius: 6, y: 2)
+        }.background(.background, in: RoundedRectangle(cornerRadius: 18))
+            .overlay { RoundedRectangle(cornerRadius: 18).stroke(selection.contains(node.id) ? Color.accentColor : Color.primary.opacity(0.13), lineWidth: selection.contains(node.id) ? 2 : 1) }
+            .clipShape(RoundedRectangle(cornerRadius: 18)).shadow(color: .black.opacity(0.08), radius: 6, y: 2)
     }
     func moveGesture(_ node: Node) -> some Gesture {
         DragGesture(minimumDistance: 2).onChanged { value in

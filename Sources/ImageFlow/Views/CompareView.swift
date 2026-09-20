@@ -42,7 +42,7 @@ struct CompareView: View {
                                         .frame(width: CGFloat(asset.width) * scale, height: CGFloat(asset.height) * scale)
                                         .frame(minWidth: canvas.size.width, minHeight: canvas.size.height)
                                 }
-                            }.background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6)).clipShape(RoundedRectangle(cornerRadius: 6))
+                            }.background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 16)).clipShape(RoundedRectangle(cornerRadius: 16))
                             HStack {
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(asset.title).font(.system(size: 13, weight: .medium)).lineLimit(1)

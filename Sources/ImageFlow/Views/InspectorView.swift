@@ -11,77 +11,79 @@ struct InspectorView: View {
     var body: some View {
         ScrollView {
             if let asset {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 22) {
                     VStack(alignment: .leading, spacing: 12) {
-                        AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 210).frame(maxWidth: .infinity)
-                            .background(StudioPalette.stage, in: RoundedRectangle(cornerRadius: 8))
-                        Text(asset.title).font(.system(size: 15, weight: .semibold))
+                        AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 180).frame(maxWidth: .infinity)
+                            .background(StudioPalette.stage, in: RoundedRectangle(cornerRadius: 18)).clipShape(RoundedRectangle(cornerRadius: 18))
+                        Text(asset.title).font(.system(size: 15, weight: .semibold)).textSelection(.enabled)
                         HStack {
                             Text("\(asset.width) × \(asset.height)")
                             Spacer()
                             Text(URL(fileURLWithPath: asset.filename).pathExtension.uppercased())
-                        }.font(.system(size: 11)).foregroundStyle(.secondary)
+                        }.font(.system(size: 11)).foregroundStyle(.secondary).monospacedDigit()
                     }
-                    Button { edit(asset) } label: { Label("이 시안에서 이어 만들기", systemImage: "arrow.triangle.branch") }.buttonStyle(.borderedProminent).controlSize(.large)
+                    Button { edit(asset) } label: { Label("이 이미지에서 이어 만들기", systemImage: "arrow.triangle.branch").frame(maxWidth: .infinity).padding(.vertical, 3) }
+                        .studioActionButton(prominent: true).buttonBorderShape(.capsule).controlSize(.large)
                     if let job = store.jobs.first(where: { $0.id == asset.jobID }) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionCaption(title: "사용한 프롬프트")
-                            Text(job.prompt).font(.system(size: 13)).lineSpacing(4).textSelection(.enabled)
-                            Button { reuse(job) } label: { Label("생성 설정 다시 사용", systemImage: "arrow.counterclockwise") }.font(.system(size: 11)).buttonStyle(.link)
+                        VStack(alignment: .leading, spacing: 10) {
+                            PanelSectionHeading(title: "프롬프트")
+                            VStack(alignment: .leading, spacing: 14) {
+                                Text(job.inputPrompt ?? job.prompt).font(.system(size: 12)).lineSpacing(4).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
+                                Button { reuse(job) } label: { Label("이 설정 다시 사용", systemImage: "arrow.counterclockwise") }.font(.system(size: 11, weight: .medium)).buttonStyle(.borderless)
+                            }.padding(14).panelSurface()
                         }
                         if !job.referenceIDs.isEmpty {
                             VStack(alignment: .leading, spacing: 10) {
-                                SectionCaption(title: "참조 이미지", trailing: "\(job.referenceIDs.count)")
-                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 66))]) {
+                                PanelSectionHeading(title: "참조 이미지", note: "\(job.referenceIDs.count)개")
+                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 62))], spacing: 8) {
                                     ForEach(job.referenceIDs.compactMap { store.asset($0) }) { reference in
-                                        AssetThumbnail(url: store.vault.thumbnail(reference)).frame(height: 66).background(StudioPalette.stage, in: RoundedRectangle(cornerRadius: 5)).help(reference.title)
+                                        AssetThumbnail(url: store.vault.thumbnail(reference)).frame(height: 62).background(StudioPalette.stage, in: RoundedRectangle(cornerRadius: 12)).help(reference.title)
                                     }
                                 }
                             }
                         }
-                        VStack(spacing: 10) {
-                            detail("실제 모델", asset.actualModelLabel)
-                            detail("생성 방식", job.requestModeLabel)
-                            if let size = asset.generationMetadata?.genSize {
-                                detail("식별 근거", "gen_size: \(size)")
-                            }
-                            if asset.generationMetadata?.model == nil {
-                                Button(checkingMetadata ? "모델 정보 확인 중…" : "모델 정보 확인") {
-                                    checkingMetadata = true
-                                    Task { @MainActor in
-                                        defer { checkingMetadata = false }
-                                        do { try await engine.refreshMetadata(for: asset) } catch { store.report(error) }
-                                    }
-                                }.buttonStyle(.borderless).disabled(checkingMetadata)
-                            }
-                            detail("생성일", asset.createdAt.formatted(date: .abbreviated, time: .shortened))
+                        VStack(alignment: .leading, spacing: 10) {
+                            PanelSectionHeading(title: "생성 정보")
+                            VStack(spacing: 12) {
+                                detail("실제 모델", asset.actualModelLabel)
+                                detail("생성 방식", job.requestModeLabel)
+                                detail("생성일", asset.createdAt.formatted(date: .abbreviated, time: .shortened))
+                                if let size = asset.generationMetadata?.genSize {
+                                    DisclosureGroup("식별 근거") { Text("gen_size: \(size)").font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary).textSelection(.enabled).padding(.top, 8) }.font(.system(size: 11)).foregroundStyle(.secondary)
+                                }
+                                if asset.generationMetadata?.model == nil {
+                                    Button(checkingMetadata ? "모델 정보 확인 중…" : "모델 정보 확인") {
+                                        checkingMetadata = true
+                                        Task { @MainActor in
+                                            defer { checkingMetadata = false }
+                                            do { try await engine.refreshMetadata(for: asset) } catch { store.report(error) }
+                                        }
+                                    }.buttonStyle(.borderless).disabled(checkingMetadata).font(.system(size: 12))
+                                }
+                            }.padding(14).panelSurface()
                         }
-                        if let url = job.conversationURL { Link(destination: url) { Label("ChatGPT 대화 열기", systemImage: "arrow.up.right") }.font(.system(size: 11)) }
+                        if let url = job.conversationURL { Link(destination: url) { Label("ChatGPT 대화 열기", systemImage: "arrow.up.right") }.font(.system(size: 11, weight: .medium)) }
                     }
                     if let parentID = asset.parentID, let parent = store.asset(parentID) {
                         VStack(alignment: .leading, spacing: 10) {
-                            SectionCaption(title: "수정 원본")
-                            HStack(spacing: 10) { AssetThumbnail(url: store.vault.thumbnail(parent)).frame(width: 44, height: 44); Text(parent.title).font(.system(size: 11)) }
+                            PanelSectionHeading(title: "수정 원본")
+                            HStack(spacing: 10) { AssetThumbnail(url: store.vault.thumbnail(parent)).frame(width: 44, height: 44); Text(parent.title).font(.system(size: 12)) }
                         }
                     }
-                    Divider()
-                    HStack {
+                    HStack(spacing: 18) {
                         Button { store.toggleFavorite(asset) } label: { Label("후보", systemImage: store.asset(asset.id)?.isFavorite == true ? "star.fill" : "star") }
-                        Spacer()
-                        StudioIconButton(symbol: "square.and.arrow.up", label: "내보내기") { store.export([asset]) }
-                        StudioIconButton(symbol: "folder", label: "Finder에서 보기") { NSWorkspace.shared.activateFileViewerSelecting([store.vault.original(asset)]) }
-                    }.buttonStyle(.borderless).font(.system(size: 11))
-                }.padding(20)
+                        Spacer(minLength: 0)
+                        Button { store.export([asset]) } label: { Image(systemName: "square.and.arrow.up") }.help("내보내기").accessibilityLabel("내보내기")
+                        Button { NSWorkspace.shared.activateFileViewerSelecting([store.vault.original(asset)]) } label: { Image(systemName: "folder") }.help("Finder에서 보기").accessibilityLabel("Finder에서 보기")
+                    }.buttonStyle(.borderless).font(.system(size: 12)).padding(14).panelSurface()
+                }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 20)
             } else {
-                VStack(spacing: 14) {
-                    Image(systemName: "cursorarrow.click").font(.system(size: 28, weight: .ultraLight)).foregroundStyle(.tertiary)
-                    Text("시안을 선택해 주세요").font(.system(size: 13, weight: .medium))
-                    Text("프롬프트와 참조 이미지,\n생성 설정을 여기서 볼 수 있어요.").font(.system(size: 11)).foregroundStyle(.secondary).multilineTextAlignment(.center).lineSpacing(4)
-                }.frame(maxWidth: .infinity).padding(.top, 100)
+                ContentUnavailableView("이미지를 선택하세요", systemImage: "photo", description: Text("프롬프트와 생성 정보를 확인하고\n다음 이미지로 이어갈 수 있습니다."))
+                    .padding(.top, 50)
             }
-        }
+        }.panelScrollEdges()
     }
     private func detail(_ name: String, _ value: String) -> some View {
-        HStack { Text(name).foregroundStyle(.secondary); Spacer(); Text(value) }.font(.system(size: 11))
+        HStack(alignment: .firstTextBaseline) { Text(name).foregroundStyle(.secondary); Spacer(minLength: 12); Text(value).multilineTextAlignment(.trailing) }.font(.system(size: 12))
     }
 }

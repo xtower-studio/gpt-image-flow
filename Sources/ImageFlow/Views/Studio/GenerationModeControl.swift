@@ -4,29 +4,43 @@ import FlowCore
 struct GenerationModeControl: View {
     @Binding var selection: GenerationMode
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("생성 방식").fontWeight(.medium)
-            ForEach(GenerationMode.allCases, id: \.self) { mode in
-                Button { selection = mode } label: {
-                    HStack(alignment: .top, spacing: 10) {
-                        Image(systemName: selection == mode ? "largecircle.fill.circle" : "circle")
-                            .foregroundStyle(selection == mode ? Color.accentColor : .secondary).padding(.top, 1)
-                        VStack(alignment: .leading, spacing: 5) {
-                            HStack {
-                                Text(mode.label).fontWeight(.semibold)
-                                Spacer(minLength: 4)
-                                Text("요청당 \(mode.imagesPerRequest)장").font(.caption).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 10) {
+            PanelSectionHeading(title: "생성 방식", note: "요청당 이미지 수")
+            VStack(spacing: 3) {
+                ForEach(GenerationMode.allCases, id: \.self) { mode in
+                    Button { selection = mode } label: {
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: symbol(mode)).font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(selection == mode ? Color.accentColor : .secondary)
+                                .frame(width: 30, height: 30)
+                                .background(selection == mode ? Color.accentColor.opacity(0.1) : Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+                            VStack(alignment: .leading, spacing: 5) {
+                                HStack(spacing: 6) {
+                                    Text(mode.label).font(.system(size: 12, weight: .semibold))
+                                    Text("\(mode.imagesPerRequest)장").font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+                                        .padding(.horizontal, 6).padding(.vertical, 2).background(.primary.opacity(0.045), in: Capsule())
+                                    Spacer(minLength: 0)
+                                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.accentColor).opacity(selection == mode ? 1 : 0)
+                                }
+                                Text(description(mode)).font(.system(size: 11)).foregroundStyle(.secondary).lineSpacing(2).fixedSize(horizontal: false, vertical: true)
                             }
-                            Text(mode.explanation).font(.system(size: 11)).foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true).lineSpacing(2)
-                        }
-                    }.font(.system(size: 12)).padding(11).frame(maxWidth: .infinity, alignment: .leading)
-                        .background(selection == mode ? Color.accentColor.opacity(0.07) : Color.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 7))
-                        .overlay { RoundedRectangle(cornerRadius: 7).strokeBorder(selection == mode ? Color.accentColor : Color.primary.opacity(0.12), lineWidth: selection == mode ? 1.5 : 1) }
-                        .contentShape(RoundedRectangle(cornerRadius: 7))
-                }.buttonStyle(.plain).accessibilityLabel(mode.label).accessibilityValue(selection == mode ? "선택됨" : "")
-                    .accessibilityHint(mode.explanation).accessibilityIdentifier("generation-mode-\(mode.rawValue)")
-            }
+                        }.padding(10).frame(maxWidth: .infinity, alignment: .leading)
+                            .background(selection == mode ? Color.accentColor.opacity(0.065) : .clear, in: RoundedRectangle(cornerRadius: 14))
+                            .contentShape(RoundedRectangle(cornerRadius: 14))
+                    }.buttonStyle(.plain).accessibilityLabel(mode.label).accessibilityValue(selection == mode ? "선택됨" : "")
+                        .accessibilityHint(mode.explanation).accessibilityIdentifier("generation-mode-\(mode.rawValue)")
+                }
+            }.padding(4).panelSurface()
+        }
+    }
+    private func symbol(_ mode: GenerationMode) -> String {
+        switch mode { case .automatic: "sparkles"; case .sunburstExperimental: "sun.max"; case .instant: "bolt" }
+    }
+    private func description(_ mode: GenerationMode) -> String {
+        switch mode {
+        case .automatic: "4장 동시 생성 · 보통 Flare 2장 + Sunburst 2장"
+        case .sunburstExperimental: "2장 동시 생성 · 높은 확률로 Sunburst 사용"
+        case .instant: "가장 빠르고 저렴한 모델로 1장 생성"
         }
     }
 }

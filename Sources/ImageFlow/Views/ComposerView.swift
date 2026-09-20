@@ -10,10 +10,8 @@ struct ComposerView: View {
     @Environment(WebSession.self) private var session
     @Environment(GenerationEngine.self) private var engine
     @State private var showVariations = false
-    @State private var dropTarget = false
     @State private var recipeName = ""
     @State private var savingRecipe = false
-    @State private var editorFocused = false
     private var current: Project { store.project(project.id) ?? project }
     private var references: [Asset] {
         var ids = current.referenceIDs
@@ -34,66 +32,43 @@ struct ComposerView: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    HStack(alignment: .center) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(editing == nil ? "새 이미지" : "이미지 수정").font(.system(size: 18, weight: .semibold))
-                            if let editing { Text(editing.title).font(.callout).foregroundStyle(.secondary).lineLimit(1) }
-                            else { Text("아이디어를 이미지로 만드세요.").font(.callout).foregroundStyle(.secondary) }
+                VStack(alignment: .leading, spacing: 22) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            PanelSectionHeading(title: editing == nil ? "프롬프트" : "수정할 내용")
+                            if editing != nil {
+                                Button { editing = nil } label: { Image(systemName: "xmark").font(.system(size: 11, weight: .medium)) }.buttonStyle(.borderless).help("수정 모드 닫기")
+                            } else { recipes }
                         }
-                        Spacer(minLength: 4)
-                        if editing != nil { Button { editing = nil } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }.buttonStyle(.plain).help("수정 모드 닫기") }
-                        else { recipes }
+                        ComposerInputCard(text: prompt, references: references, originalID: editing?.id, focusRequest: focusRequest,
+                            thumbnail: store.vault.thumbnail, add: { store.selectImages(projectID: project.id) },
+                            remove: { id in var copy = current; copy.referenceIDs.removeAll { $0 == id }; store.updateProject(copy) },
+                            importFiles: { store.importImages($0, projectID: project.id) })
                     }
-                    referencesView
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(editing == nil ? "프롬프트" : "수정할 내용").fontWeight(.medium)
-                        ZStack(alignment: .topLeading) {
-                            if prompt.wrappedValue.isEmpty {
-                                Text(editing == nil ? "피사체, 분위기, 색감과 빛을 설명해 주세요." : "바꿀 부분과 유지할 부분을 설명해 주세요.").font(.system(size: 13)).foregroundStyle(.secondary).padding(12).allowsHitTesting(false)
-                            }
-                            DropTextEditor(text: prompt, onFiles: { store.importImages($0, projectID: project.id) }, onFocusChanged: { editorFocused = $0 }, focusRequest: focusRequest)
-                                .frame(height: 134).padding(4).accessibilityLabel("이미지 프롬프트")
-                        }.background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
-                            .overlay { RoundedRectangle(cornerRadius: 6).strokeBorder(editorFocused ? Color.accentColor : Color.primary.opacity(0.16), lineWidth: editorFocused ? 2 : 1) }
-                    }
-                    VStack(spacing: 14) {
-                        GenerationModeControl(selection: Binding(get: { store.selectedGenerationMode }, set: { store.selectedGenerationMode = $0 }))
-                        HStack {
-                            Text("화면 비율")
-                            Spacer()
-                            Picker("화면 비율", selection: binding(\.aspect)) { ForEach(["자유", "1:1", "3:2", "2:3", "16:9"], id: \.self) { Text($0 == "자유" ? "자동" : $0).tag($0) } }.labelsHidden().frame(width: 165)
-                        }
-                        HStack {
-                            Text("배경")
-                            Spacer()
-                            Picker("배경", selection: Binding(get: { current.background ?? .automatic }, set: { var copy = current; copy.background = $0; store.updateProject(copy) })) {
-                                ForEach(BackgroundOption.allCases, id: \.self) { Text($0.label).tag($0) }
-                            }.labelsHidden().frame(width: 165)
-                        }
-                        HStack {
-                            Text("요청 횟수")
-                            Spacer()
-                            TextField("요청 횟수", value: Binding(get: { count }, set: { value in var copy = current; copy.copies = min(50, max(1, value)); store.updateProject(copy) }), format: .number.grouping(.never))
-                                .textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing).frame(width: 52).monospacedDigit().accessibilityLabel("요청 횟수 입력")
-                            Text("회").foregroundStyle(.secondary)
-                            Stepper("요청 횟수", value: binding(\.copies), in: 1...50).labelsHidden().fixedSize()
-                        }.disabled(editing != nil || !current.variations.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }.padding(.vertical, 2)
-                    Divider()
-                    DisclosureGroup("요청별 변형", isExpanded: $showVariations) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("공통 프롬프트에 더할 내용을 한 줄씩 적으세요. 각 줄을 별도 요청으로 보냅니다. 요청마다 선택한 방식의 장수만큼 생성합니다.").font(.callout).foregroundStyle(.secondary)
-                            TextEditor(text: binding(\.variations)).font(.system(size: 13)).frame(height: 90).padding(5).background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6)).overlay { RoundedRectangle(cornerRadius: 6).strokeBorder(.quaternary) }
-                        }.padding(.top, 10)
-                    }.disabled(editing != nil)
-                }.font(.system(size: 13)).padding(20)
-            }
+                    GenerationModeControl(selection: Binding(get: { store.selectedGenerationMode }, set: { store.selectedGenerationMode = $0 }))
+                    ComposerOptions(aspect: binding(\.aspect),
+                        background: Binding(get: { current.background ?? .automatic }, set: { var copy = current; copy.background = $0; store.updateProject(copy) }),
+                        count: Binding(get: { count }, set: { value in var copy = current; copy.copies = min(50, max(1, value)); store.updateProject(copy) }),
+                        countLocked: editing != nil || !current.variations.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    DisclosureGroup(isExpanded: $showVariations) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("한 줄마다 별도 요청으로 보냅니다. 공통 프롬프트에 더할 내용을 적으세요.").font(.system(size: 11)).foregroundStyle(.secondary)
+                            TextEditor(text: binding(\.variations)).font(.system(size: 12)).scrollContentBackground(.hidden)
+                                .frame(height: 90).padding(10).panelSurface(radius: 14, editor: true).accessibilityLabel("요청별 변형 입력")
+                        }.padding(.top, 12)
+                    } label: { Text("요청별 변형").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary) }
+                    .disabled(editing != nil)
+                }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 18)
+            }.panelScrollEdges()
             VStack(spacing: 10) {
-                Text("\(count)회 요청 × \(store.selectedGenerationMode.imagesPerRequest)장 = 총 \(totalImages)장")
-                    .font(.system(size: 12)).foregroundStyle(.secondary).monospacedDigit().accessibilityIdentifier("generation-total")
+                HStack {
+                    Text("총 \(totalImages)장").font(.system(size: 12, weight: .semibold))
+                    Spacer()
+                    Text("\(count)회 요청 × \(store.selectedGenerationMode.imagesPerRequest)장").font(.system(size: 11)).foregroundStyle(.secondary)
+                }.monospacedDigit().accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(count)회 요청 × \(store.selectedGenerationMode.imagesPerRequest)장 = 총 \(totalImages)장").accessibilityIdentifier("generation-total")
                 Button(action: generate) {
-                    HStack { Image(systemName: "sparkles"); Text(editing == nil ? "\(totalImages)개 이미지 생성" : "\(totalImages)개 수정본 생성").fontWeight(.semibold); Spacer(); Text("⌘ ↵").font(.system(size: 12)).opacity(0.8) }.frame(maxWidth: .infinity).padding(.vertical, 3)
+                    HStack { Image(systemName: "sparkles"); Text(editing == nil ? "\(totalImages)개 이미지 생성" : "\(totalImages)개 수정본 생성").fontWeight(.semibold); Spacer(); Text("⌘↵").font(.system(size: 11, weight: .medium, design: .rounded)).opacity(0.65) }.frame(maxWidth: .infinity).padding(.vertical, 5)
                 }.studioActionButton(prominent: true).buttonBorderShape(.capsule).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(!canGenerate)
                 HStack(spacing: 5) {
                     if store.importing { ProgressView().controlSize(.mini); Text("참조 이미지 가져오는 중…") }
@@ -108,51 +83,6 @@ struct ComposerView: View {
             Button("취소", role: .cancel) {}
         } message: { Text("프롬프트, 참조와 생성 설정을 함께 저장합니다.") }
         .onAppear { showVariations = !current.variations.isEmpty }
-    }
-    private var referencesView: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("참조 이미지").fontWeight(.medium)
-                if !references.isEmpty { Text("\(references.count)").foregroundStyle(.secondary) }
-                Spacer()
-                Button { store.selectImages(projectID: project.id) } label: { Image(systemName: "plus") }.buttonStyle(.borderless).help("참조 이미지 추가 · ⌘O")
-            }
-            if references.isEmpty {
-                Button { store.selectImages(projectID: project.id) } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "photo.badge.plus").font(.system(size: 23, weight: .light))
-                        VStack(alignment: .leading, spacing: 4) { Text("이미지를 여기에 놓으세요").font(.system(size: 12, weight: .medium)); Text("또는 클릭해서 선택 · 선택 사항").font(.system(size: 11)) }
-                    }.foregroundStyle(.secondary).frame(maxWidth: .infinity).frame(height: 74)
-                        .background(.quaternary.opacity(0.2), in: RoundedRectangle(cornerRadius: 6))
-                        .overlay { RoundedRectangle(cornerRadius: 6).strokeBorder(Color.primary.opacity(0.18), style: StrokeStyle(lineWidth: 1, dash: [4,3])) }
-                }.buttonStyle(.plain)
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(references) { asset in
-                            AssetThumbnail(url: store.vault.thumbnail(asset)).frame(width: 68, height: 68)
-                                .background(.quaternary.opacity(0.2), in: RoundedRectangle(cornerRadius: 5))
-                                .help(editing?.id == asset.id ? "수정 원본: \(asset.title)" : asset.title)
-                                .overlay(alignment: .topTrailing) {
-                                    if editing?.id != asset.id {
-                                        Button { var copy = current; copy.referenceIDs.removeAll { $0 == asset.id }; store.updateProject(copy) } label: { Image(systemName: "xmark.circle.fill").symbolRenderingMode(.palette).foregroundStyle(.white, .black.opacity(0.7)).font(.system(size: 17)) }.buttonStyle(.plain).padding(3).help("\(asset.title) 참조 제거").accessibilityLabel("\(asset.title) 참조 제거")
-                                    }
-                                }
-                        }
-                    }.padding(.vertical, 2)
-                }
-            }
-        }
-        .contentShape(Rectangle())
-        .overlay { if dropTarget { RoundedRectangle(cornerRadius: 6).strokeBorder(Color.accentColor, lineWidth: 2).allowsHitTesting(false) } }
-        .dropDestination(for: URL.self) { urls, _ in
-            let files = urls.filter(\.isFileURL)
-            guard !files.isEmpty else { return false }
-            store.importImages(files, projectID: project.id); return true
-        } isTargeted: { dropTarget = $0 }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("참조 이미지 영역")
-        .accessibilityIdentifier("reference-drop-region")
     }
     private var recipes: some View {
         Menu {

@@ -203,12 +203,12 @@ struct CollectionImageCell: View {
             GeometryReader { geometry in
                 AssetThumbnail(url: store.vault.thumbnail(asset)).frame(width: geometry.size.width, height: geometry.size.height)
             }.aspectRatio(1, contentMode: .fit)
-                .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
-                .overlay { RoundedRectangle(cornerRadius: 6).strokeBorder(selected ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: selected ? 2 : 1) }
+                .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
+                .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(selected ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: selected ? 2 : 1) }
                 .overlay(alignment: .topTrailing) {
                     if asset.isFavorite { Image(systemName: "star.fill").font(.system(size: 11, weight: .semibold)).foregroundStyle(.white).padding(7).background(.black.opacity(0.65), in: Circle()).padding(8) }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
             HStack(alignment: .center, spacing: 6) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(asset.title).font(.system(size: 12, weight: .medium)).lineLimit(1).foregroundStyle(selected ? Color.accentColor : .primary)

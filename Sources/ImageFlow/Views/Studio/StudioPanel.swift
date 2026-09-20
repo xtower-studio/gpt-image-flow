@@ -17,7 +17,6 @@ struct StudioPanel: View {
     var body: some View {
         VStack(spacing: 0) {
             Picker("작업 패널", selection: $tab) { ForEach(StudioPanelTab.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented).labelsHidden().padding(16)
-            Divider()
             ZStack(alignment: .top) {
                 ComposerView(project: project, editing: $editing, editPrompt: $editPrompt, focusRequest: focusRequest)
                     .opacity(tab == .create ? 1 : 0).allowsHitTesting(tab == .create).disabled(tab != .create).accessibilityHidden(tab != .create)
@@ -28,7 +27,7 @@ struct StudioPanel: View {
                 TaskHistoryView(project: project, selectedJobID: $responseJobID)
                     .opacity(tab == .reply ? 1 : 0).allowsHitTesting(tab == .reply).disabled(tab != .reply).accessibilityHidden(tab != .reply)
             }.frame(maxHeight: .infinity)
-        }.background(.background)
+        }
     }
     private var multipleSelection: some View {
         ScrollView {

@@ -24,7 +24,7 @@ struct CompareView: View {
                 Button { actualSize = false; zoom = min(4, zoom + 0.5) } label: { Image(systemName: "plus.magnifyingglass") }.disabled(zoom == 4 && !actualSize).help("확대")
                 Divider().frame(height: 18)
                 Toggle(isOn: $showPrompts) { Image(systemName: "text.alignleft") }.toggleStyle(.button).help("프롬프트 표시")
-                Button("완료") { dismiss() }.keyboardShortcut(.escape, modifiers: [])
+                Button("완료") { dismiss() }.studioActionButton().keyboardShortcut(.escape, modifiers: [])
             }.buttonStyle(.borderless).padding(16)
             Divider()
             GeometryReader { geometry in
@@ -59,6 +59,6 @@ struct CompareView: View {
                     }
                 }.padding(16)
             }.background(StudioPalette.stage)
-        }.frame(minWidth: 820, idealWidth: 1040, minHeight: 600, idealHeight: 760).background(.background)
+        }.frame(minWidth: 820, idealWidth: 1040, minHeight: 600, idealHeight: 760)
     }
 }

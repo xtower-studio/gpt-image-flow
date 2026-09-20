@@ -28,7 +28,7 @@ struct WorkspaceSidebar: View {
                 }
             }.listStyle(.sidebar)
             VStack(spacing: 14) {
-                Button(action: addProject) { Label("새 프로젝트", systemImage: "plus").frame(maxWidth: .infinity) }.controlSize(.regular).help("새 프로젝트 · ⌘N")
+                Button(action: addProject) { Label("새 프로젝트", systemImage: "plus").frame(maxWidth: .infinity) }.studioActionButton().buttonBorderShape(.capsule).controlSize(.large).help("새 프로젝트 · ⌘N")
                 Divider()
                 HStack(spacing: 8) {
                     Circle().fill(session.status == .ready ? Color.green : Color.orange).frame(width: 6, height: 6)

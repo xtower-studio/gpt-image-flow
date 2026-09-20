@@ -89,13 +89,12 @@ struct ComposerView: View {
                     }.disabled(editing != nil)
                 }.font(.system(size: 13)).padding(20)
             }
-            Divider()
             VStack(spacing: 10) {
                 Text("\(count)회 요청 × \(store.selectedGenerationMode.imagesPerRequest)장 = 총 \(totalImages)장")
                     .font(.system(size: 12)).foregroundStyle(.secondary).monospacedDigit().accessibilityIdentifier("generation-total")
                 Button(action: generate) {
                     HStack { Image(systemName: "sparkles"); Text(editing == nil ? "\(totalImages)개 이미지 생성" : "\(totalImages)개 수정본 생성").fontWeight(.semibold); Spacer(); Text("⌘ ↵").font(.system(size: 12)).opacity(0.8) }.frame(maxWidth: .infinity).padding(.vertical, 3)
-                }.buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(!canGenerate)
+                }.studioActionButton(prominent: true).buttonBorderShape(.capsule).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(!canGenerate)
                 HStack(spacing: 5) {
                     if store.importing { ProgressView().controlSize(.mini); Text("참조 이미지 가져오는 중…") }
                     else if store.journal.paused { Image(systemName: "pause.circle"); Text("대기열 일시정지 · 작업 탭에서 계속") }

@@ -109,7 +109,7 @@ struct FreeCanvasView: View {
                                 Text("첨부     이미지를 오른쪽 참조 영역으로 드래그")
                             }.font(.system(size: 13)).padding(20)
                         }
-                }.buttonStyle(.borderless).padding(10).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 9)).padding(12)
+                }.buttonStyle(.borderless).padding(.horizontal, 14).padding(.vertical, 8).studioGlass(cornerRadius: 24).padding(16)
             }
             .simultaneousGesture(MagnificationGesture().onChanged { value in
                 if zoomStart == nil { zoomStart = viewport.scale }

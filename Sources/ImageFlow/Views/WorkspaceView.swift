@@ -46,15 +46,18 @@ struct WorkspaceView: View {
             WorkspaceSidebar(selectedProject: $selectedProject, currentID: project?.id, onSelect: resetSelection, rename: { renameText = $0.name; renameTarget = .project($0) }, addProject: newProject)
                 .navigationSplitViewColumnWidth(min: 175, ideal: 200, max: 280)
         } detail: {
-            VStack(spacing: 0) {
-                if let project {
-                    activityStrip
-                    board(project)
-                    footer
-                } else { ContentUnavailableView("저장 공간을 확인해 주세요", systemImage: "externaldrive.badge.exclamationmark", description: Text(store.errorMessage ?? "")) }
+            StudioGlassGroup {
+                VStack(spacing: 0) {
+                    if let project {
+                        activityStrip
+                        board(project)
+                        footer
+                    } else { ContentUnavailableView("저장 공간을 확인해 주세요", systemImage: "externaldrive.badge.exclamationmark", description: Text(store.errorMessage ?? "")) }
+                }
+                .background(StudioPalette.stage)
+                .overlay(alignment: .bottom) { notice }
             }
-            .overlay(alignment: .bottom) { notice }
-            .toolbarBackground(.hidden, for: .windowToolbar)
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
             .navigationTitle(project?.name ?? "프로젝트")
             .navigationSubtitle("\(allAssets.count)개 이미지")
             .searchable(text: $query, isPresented: $searchPresented, placement: .toolbar, prompt: "이미지 검색")
@@ -68,6 +71,7 @@ struct WorkspaceView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Button { favoritesOnly.toggle() } label: { Label("후보만 보기", systemImage: favoritesOnly ? "star.fill" : "star") }.help("후보만 보기").tint(favoritesOnly ? .accentColor : nil)
                 }
+                if #available(macOS 26.0, *) { ToolbarSpacer(.fixed, placement: .primaryAction) }
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: startCreate) { Label("만들기", systemImage: "square.and.pencil") }.help("새 이미지 만들기 · ⇧⌘N")
                 }
@@ -121,7 +125,7 @@ struct WorkspaceView: View {
             } else {
                 NativeImageCollection(assets: assets, store: store, cardSize: cardSize, selection: $selection, preview: { comparison = Array($0.prefix(4)) }, edit: beginEdit, inspect: { panel = .details; panelVisible = true }, attach: { store.attach($0, to: project.id); panel = .create; panelVisible = true }, rename: renameAsset, hide: hideAssets)
             }
-        }.frame(maxWidth: .infinity, maxHeight: .infinity).background(StudioPalette.stage)
+        }.frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity).background(StudioPalette.stage)
     }
     @ViewBuilder private var activityStrip: some View {
         let active = projectJobs.filter { $0.state.isRunning || $0.state == .queued }
@@ -152,20 +156,26 @@ struct WorkspaceView: View {
     }
     private var footer: some View {
         HStack(spacing: 12) {
-            Text(selection.isEmpty ? "\(assets.count)개 이미지" : "\(selectedAssets.count)개 선택").font(.system(size: 12)).foregroundStyle(.secondary).monospacedDigit()
-            if selectedAssets.count == 1 { Button("수정") { if let first = selectedAssets.first { beginEdit(first) } }.help("선택한 이미지 수정 · ⌘E") }
-            if (2...4).contains(selectedAssets.count) { Button("비교") { comparison = selectedAssets }.help("나란히 비교 · ⇧⌘C") }
-            if !selectedAssets.isEmpty {
-                Button { panel = .details; panelVisible = true } label: { Image(systemName: "info.circle") }.help("선택 정보")
-                Button { store.export(selectedAssets) } label: { Image(systemName: "square.and.arrow.up") }.help("내보내기 · ⇧⌘E")
-            }
-            Spacer(minLength: 4)
+            HStack(spacing: 14) {
+                Text(selection.isEmpty ? "\(assets.count)개 이미지" : "\(selectedAssets.count)개 선택")
+                    .foregroundStyle(.secondary).monospacedDigit()
+                if selectedAssets.count == 1 { Button("수정") { if let first = selectedAssets.first { beginEdit(first) } }.help("선택한 이미지 수정 · ⌘E") }
+                if (2...4).contains(selectedAssets.count) { Button("비교") { comparison = selectedAssets }.help("나란히 비교 · ⇧⌘C") }
+                if !selectedAssets.isEmpty {
+                    Divider().frame(height: 16)
+                    Button { panel = .details; panelVisible = true } label: { Image(systemName: "info.circle") }.help("선택 정보")
+                    Button { store.export(selectedAssets) } label: { Image(systemName: "square.and.arrow.up") }.help("내보내기 · ⇧⌘E")
+                }
+            }.padding(.horizontal, 16).frame(height: 36).studioGlass()
+            Spacer(minLength: 0)
             if boardMode == "grid" {
-                Image(systemName: "photo").font(.system(size: 10)).foregroundStyle(.secondary)
-                Slider(value: $cardSize, in: 170...320).frame(width: 84).controlSize(.small).accessibilityLabel("이미지 크기")
-                Image(systemName: "photo").font(.system(size: 15)).foregroundStyle(.secondary)
+                HStack(spacing: 10) {
+                    Image(systemName: "photo").font(.system(size: 10)).foregroundStyle(.secondary)
+                    Slider(value: $cardSize, in: 170...320).frame(width: 80).controlSize(.small).accessibilityLabel("이미지 크기")
+                    Image(systemName: "photo").font(.system(size: 15)).foregroundStyle(.secondary)
+                }.padding(.horizontal, 14).frame(height: 36).studioGlass()
             }
-        }.buttonStyle(.borderless).font(.system(size: 12)).padding(.horizontal, 20).frame(height: 38).background(.bar).overlay(alignment: .top) { Divider() }
+        }.buttonStyle(.borderless).font(.system(size: 12)).padding(.horizontal, 16).padding(.vertical, 10)
     }
     @ViewBuilder private var notice: some View {
         if let text = store.notice {
@@ -174,7 +184,7 @@ struct WorkspaceView: View {
                 Text(text).font(.callout).lineLimit(3)
                 if !store.lastHiddenAssets.isEmpty { Button("되돌리기", action: store.undoHide) }
                 Button { store.notice = nil } label: { Image(systemName: "xmark") }.buttonStyle(.plain).help("알림 닫기")
-            }.padding(12).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10)).shadow(color: .black.opacity(0.1), radius: 10, y: 3).frame(maxWidth: 480).padding(.bottom, 48).padding(.horizontal, 20)
+            }.padding(.horizontal, 16).padding(.vertical, 12).studioGlass(cornerRadius: 20).frame(maxWidth: 480).padding(.bottom, 66).padding(.horizontal, 20)
         }
     }
     private var actions: StudioActions {

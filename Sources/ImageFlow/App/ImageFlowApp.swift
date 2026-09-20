@@ -11,6 +11,7 @@ import SwiftUI
                 if let engine { WorkspaceView().environment(engine) }
                 else { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
             }.environment(session).environment(store)
+                .modifier(DevelopmentAppearance())
                 .frame(minWidth: 1000, minHeight: 680)
                 .task {
                     appDelegate.session = session

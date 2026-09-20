@@ -10,6 +10,9 @@ extension FlowAppDelegate {
         try? FileManager.default.removeItem(at: url)
         do {
             if operation == "studioPreview" {
+                for (key, preference) in [("reduceTransparency", "devPreviewReduceTransparency"), ("increaseContrast", "devPreviewIncreaseContrast")] {
+                    if let value = command[key] { UserDefaults.standard.set(value == "true", forKey: preference) }
+                }
                 if let mode = command["mode"] { UserDefaults.standard.set(mode, forKey: "studioBoardMode") }
                 if let appearance = command["appearance"] { NSApp.appearance = appearance == "system" ? nil : NSAppearance(named: appearance == "dark" ? .darkAqua : .aqua) }
                 if let projectID = command["project"].flatMap(UUID.init(uuidString:)) { store.requestedProjectID = projectID }

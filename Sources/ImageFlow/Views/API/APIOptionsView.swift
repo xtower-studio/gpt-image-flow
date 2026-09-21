@@ -11,38 +11,42 @@ struct APIOptionsView: View {
     @State private var advanced = false
     @State private var connect = false
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: PanelSpacing.heading) {
             HStack {
                 PanelSectionHeading(title: "출력 설정")
                 Button(store.apiConnection.ready ? "연결 관리" : "API 연결") { connect = true }.buttonStyle(.borderless).font(StudioTypography.metadata)
             }
             APIModelPicker(options: $options)
-                .font(StudioTypography.supporting).padding(12).panelSurface(radius: 16)
-            APISizeControls(options: $options)
-            HStack(spacing: 10) {
-                OptionTile(title: "품질", symbol: "sparkles") {
-                    Menu {
-                        ForEach(options.modelInfo?.qualities ?? ImageAPIOptions.qualities, id: \.self) { value in
-                            Button(Self.qualityName(value)) { options.quality = value }
-                        }
-                    } label: { Text(Self.qualityName(options.quality)) }
-                    .accessibilityIdentifier("api-quality")
-                }
-                OptionTile(title: "배경", symbol: "square.on.square") {
-                    Menu {
-                        Button("자동") { options.background = "auto" }
-                        Button("불투명") { options.background = "opaque" }
-                        Button("투명") {
-                            options.background = "transparent"
-                            if options.outputFormat == "jpeg" { options.outputFormat = "png" }
-                        }
-                    } label: { Text(options.background == "transparent" ? "투명" : options.background == "opaque" ? "불투명" : "자동") }
-                    .accessibilityIdentifier("api-background")
+                .font(StudioTypography.supporting).padding(PanelSpacing.card).panelSurface(radius: 16)
+            VStack(spacing: PanelSpacing.related) {
+                APISizeControls(options: $options)
+                HStack(spacing: PanelSpacing.related) {
+                    OptionTile(title: "품질", symbol: "sparkles") {
+                        Menu {
+                            ForEach(options.modelInfo?.qualities ?? ImageAPIOptions.qualities, id: \.self) { value in
+                                Button(Self.qualityName(value)) { options.quality = value }
+                            }
+                        } label: { Text(Self.qualityName(options.quality)) }
+                        .accessibilityIdentifier("api-quality")
+                    }
+                    OptionTile(title: "배경", symbol: "square.on.square") {
+                        Menu {
+                            Button("자동") { options.background = "auto" }
+                            Button("불투명") { options.background = "opaque" }
+                            Button("투명") {
+                                options.background = "transparent"
+                                if options.outputFormat == "jpeg" { options.outputFormat = "png" }
+                            }
+                        } label: { Text(options.background == "transparent" ? "투명" : options.background == "opaque" ? "불투명" : "자동") }
+                        .accessibilityIdentifier("api-background")
+                    }
                 }
             }
-            APIQuantityRow(title: "요청당 이미지", value: $options.count, maximum: 10)
-                .accessibilityIdentifier("api-image-count")
-            APIQuantityRow(title: "요청 횟수", value: $requests, maximum: 50).disabled(countLocked)
+            VStack(spacing: PanelSpacing.related) {
+                APIQuantityRow(title: "요청당 이미지", value: $options.count, maximum: 10)
+                    .accessibilityIdentifier("api-image-count")
+                APIQuantityRow(title: "요청 횟수", value: $requests, maximum: 50).disabled(countLocked)
+            }.padding(.vertical, 4)
             Button { advanced = true } label: { Label("모든 API 옵션…", systemImage: "slider.horizontal.3") }.buttonStyle(.borderless).font(StudioTypography.control)
             APIBillingNotice().padding(.top, 4)
         }.sheet(isPresented: $advanced) { APIAdvancedView(options: $options, projectID: projectID, references: references) }
@@ -55,10 +59,10 @@ struct APIOptionsView: View {
 
 struct APIBillingNotice: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             Label("앱 수수료 0원", systemImage: "checkmark.seal").font(StudioTypography.control)
             Text("API 사용료는 OpenAI가 직접 청구합니다. Image Flow는 어떠한 수수료도 받지 않습니다.")
-                .font(StudioTypography.metadata).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                .font(StudioTypography.metadata).foregroundStyle(.secondary).lineSpacing(2).fixedSize(horizontal: false, vertical: true)
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -88,7 +92,7 @@ struct APIModelPicker: View {
 struct APISizeControls: View {
     @Binding var options: ImageAPIOptions
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: PanelSpacing.related) {
             OptionTile(title: "화면 비율", symbol: "aspectratio") {
                 Menu {
                     Button("자동") { options.size = "auto" }

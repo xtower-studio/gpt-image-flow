@@ -7,9 +7,9 @@ struct ComposerOptions: View {
     @Binding var count: Int
     let countLocked: Bool
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: PanelSpacing.heading) {
             PanelSectionHeading(title: "출력 설정")
-            HStack(spacing: 10) {
+            HStack(spacing: PanelSpacing.related) {
                 OptionTile(title: "화면 비율", symbol: "aspectratio") {
                     Menu {
                         ForEach(["자유", "1:1", "3:2", "2:3", "16:9"], id: \.self) { value in
@@ -42,7 +42,7 @@ struct ComposerOptions: View {
                         .textFieldStyle(.plain).multilineTextAlignment(.center).frame(width: 32).monospacedDigit().accessibilityLabel("요청 횟수 입력")
                     Button { count = min(50, count + 1) } label: { Image(systemName: "plus").frame(width: 28, height: 30).contentShape(Rectangle()) }.disabled(count >= 50).accessibilityLabel("요청 횟수 늘리기")
                 }.buttonStyle(.plain).font(StudioTypography.item).panelSurface(radius: 12).disabled(countLocked)
-            }.padding(.top, 2)
+            }.padding(.top, 4)
         }
     }
 }
@@ -56,6 +56,6 @@ struct OptionTile<Content: View>: View {
             Label(title, systemImage: symbol).font(StudioTypography.metadata).foregroundStyle(.secondary)
             content().menuStyle(.borderlessButton).menuIndicator(.visible)
                 .font(StudioTypography.item).frame(maxWidth: .infinity, alignment: .leading)
-        }.padding(12).frame(minWidth: 0, maxWidth: .infinity, alignment: .leading).panelSurface(radius: 16)
+        }.padding(PanelSpacing.card).frame(minWidth: 0, maxWidth: .infinity, alignment: .leading).panelSurface(radius: 16)
     }
 }

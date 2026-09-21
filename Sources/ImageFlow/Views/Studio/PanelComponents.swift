@@ -54,7 +54,7 @@ struct StudioPanelTabs: View {
                         .accessibilityIdentifier("studio-panel-\(tab.rawValue)")
                 }
             }
-        }.padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 12)
+        }.padding(.horizontal, PanelSpacing.inset).padding(.top, 12).padding(.bottom, 8)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.16), value: selection)
     }
 }

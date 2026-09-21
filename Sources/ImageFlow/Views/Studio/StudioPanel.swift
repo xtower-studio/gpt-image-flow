@@ -34,7 +34,7 @@ struct StudioPanel: View {
     }
     private var multipleSelection: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: PanelSpacing.section) {
                 Text("\(selectedAssets.count)개 이미지").font(StudioTypography.title)
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 84))]) {
                     ForEach(selectedAssets) { asset in AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 90).clipShape(RoundedRectangle(cornerRadius: 12)) }
@@ -42,7 +42,7 @@ struct StudioPanel: View {
                 Button { store.export(selectedAssets) } label: { Label("선택한 이미지 내보내기", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity) }.studioActionButton(prominent: true).controlSize(.large)
                 Button("모두 참조에 추가") { for asset in selectedAssets { store.attach(asset, to: project.id) }; tab = .create }
                 Text("한 장을 선택하면 프롬프트와 생성 설정을 볼 수 있습니다.").font(StudioTypography.supporting).foregroundStyle(.secondary)
-            }.padding(16)
+            }.padding(.horizontal, PanelSpacing.inset).padding(.top, PanelSpacing.top).padding(.bottom, PanelSpacing.section)
         }
     }
 }

@@ -10,7 +10,7 @@ struct InspectorView: View {
     var body: some View {
         ScrollView {
             if let asset {
-                VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: PanelSpacing.section) {
                     VStack(alignment: .leading, spacing: 12) {
                         AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 180).frame(maxWidth: .infinity)
                             .background(StudioPalette.stage, in: RoundedRectangle(cornerRadius: 18)).clipShape(RoundedRectangle(cornerRadius: 18))
@@ -24,7 +24,7 @@ struct InspectorView: View {
                     Button { edit(asset) } label: { Label("이 이미지에서 이어 만들기", systemImage: "arrow.triangle.branch").font(StudioTypography.action).frame(maxWidth: .infinity).padding(.vertical, 3) }
                         .studioActionButton(prominent: true).buttonBorderShape(.capsule).controlSize(.large)
                     if let job = store.jobs.first(where: { $0.id == asset.jobID }) {
-                        VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: PanelSpacing.heading) {
                             PanelSectionHeading(title: "프롬프트")
                             VStack(alignment: .leading, spacing: 14) {
                                 Text(job.inputPrompt ?? job.prompt).font(StudioTypography.body).lineSpacing(StudioTypography.lineSpacing).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
@@ -32,7 +32,7 @@ struct InspectorView: View {
                             }.padding(14).panelSurface()
                         }
                         if !job.referenceIDs.isEmpty {
-                            VStack(alignment: .leading, spacing: 10) {
+                            VStack(alignment: .leading, spacing: PanelSpacing.heading) {
                                 PanelSectionHeading(title: "참조 이미지", note: "\(job.referenceIDs.count)개")
                                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 62))], spacing: 8) {
                                     ForEach(job.referenceIDs.compactMap { store.asset($0) }) { reference in
@@ -41,7 +41,7 @@ struct InspectorView: View {
                                 }
                             }
                         }
-                        VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: PanelSpacing.heading) {
                             PanelSectionHeading(title: "생성 정보")
                             VStack(spacing: 12) {
                                 if let model = asset.actualModelLabel { detail("모델", model) }
@@ -53,7 +53,7 @@ struct InspectorView: View {
                         if let url = job.conversationURL { Link(destination: url) { Label("ChatGPT 대화 열기", systemImage: "arrow.up.right") }.font(StudioTypography.control) }
                     }
                     if let parentID = asset.parentID, let parent = store.asset(parentID) {
-                        VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: PanelSpacing.heading) {
                             PanelSectionHeading(title: "수정 원본")
                             HStack(spacing: 10) { AssetThumbnail(url: store.vault.thumbnail(parent)).frame(width: 44, height: 44); Text(parent.title).font(StudioTypography.supporting) }
                         }
@@ -64,7 +64,7 @@ struct InspectorView: View {
                         Button { store.export([asset]) } label: { Image(systemName: "square.and.arrow.up") }.help("내보내기").accessibilityLabel("내보내기")
                         Button { NSWorkspace.shared.activateFileViewerSelecting([store.vault.original(asset)]) } label: { Image(systemName: "folder") }.help("Finder에서 보기").accessibilityLabel("Finder에서 보기")
                     }.buttonStyle(.borderless).font(StudioTypography.supporting).padding(14).panelSurface()
-                }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 20)
+                }.padding(.horizontal, PanelSpacing.inset).padding(.top, PanelSpacing.top).padding(.bottom, PanelSpacing.section)
             } else {
                 ContentUnavailableView("이미지를 선택하세요", systemImage: "photo", description: Text("프롬프트와 생성 정보를 확인하고\n다음 이미지로 이어갈 수 있습니다."))
                     .padding(.top, 50)

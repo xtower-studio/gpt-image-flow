@@ -36,8 +36,8 @@ struct ComposerView: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: PanelSpacing.section) {
+                    VStack(alignment: .leading, spacing: PanelSpacing.heading) {
                         HStack {
                             PanelSectionHeading(title: editing == nil ? "프롬프트" : "수정할 내용")
                             if editing != nil {
@@ -59,16 +59,16 @@ struct ComposerView: View {
                             countLocked: editing != nil || !current.variations.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
                     DisclosureGroup(isExpanded: $showVariations) {
-                        VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: PanelSpacing.heading) {
                             Text("한 줄마다 별도 요청으로 보냅니다. 공통 프롬프트에 더할 내용을 적으세요.").font(StudioTypography.supporting).foregroundStyle(.secondary)
                             TextEditor(text: binding(\.variations)).font(StudioTypography.body).scrollContentBackground(.hidden)
                                 .frame(height: 90).padding(10).panelSurface(radius: 14, editor: true).accessibilityLabel("요청별 변형 입력")
                         }.padding(.top, 12)
                     } label: { Text("요청별 변형").font(StudioTypography.control) }
                     .disabled(editing != nil)
-                }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 18)
+                }.padding(.horizontal, PanelSpacing.inset).padding(.top, PanelSpacing.top).padding(.bottom, PanelSpacing.section)
             }.panelScrollEdges()
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 HStack {
                     Text("총 \(totalImages)장").font(StudioTypography.section)
                     Spacer()
@@ -84,7 +84,7 @@ struct ComposerView: View {
                     else if isAPI { Image(systemName: "creditcard"); Text("OpenAI 청구 · 앱 수수료 없음") }
                     else { Image(systemName: engine.eco ? "leaf" : "square.stack.3d.up"); Text(engine.eco ? "절전 모드 · 요청 1개씩 실행" : "최대 3개 요청 동시 실행") }
                 }.font(StudioTypography.metadata).foregroundStyle(.secondary)
-            }.padding(16)
+            }.padding(.horizontal, PanelSpacing.inset).padding(.top, 16).padding(.bottom, 16)
         }
         .sheet(isPresented: $showAPIConnection) { APIConnectionView() }
         .onChange(of: store.selectedGenerationMode) { _, mode in if mode == .sunburstAPI && !store.apiConnection.ready { showAPIConnection = true } }

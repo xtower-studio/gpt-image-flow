@@ -35,7 +35,7 @@ struct ComposerInputCard: View {
             } isTargeted: { dropTarget = $0 }
     }
     private var referenceStrip: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: PanelSpacing.related) {
             HStack(spacing: 8) {
                 Image(systemName: "paperclip").font(.system(size: 12))
                 Text("참조 이미지").font(StudioTypography.control).foregroundStyle(.primary)
@@ -66,7 +66,7 @@ struct ComposerInputCard: View {
                     .font(StudioTypography.supporting).foregroundStyle(.secondary).buttonStyle(.plain)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-        }.padding(.horizontal, 14).padding(.vertical, 10)
+        }.padding(.horizontal, PanelSpacing.card).padding(.top, 10).padding(.bottom, 14)
             .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
             .accessibilityElement(children: .contain).accessibilityLabel("참조 이미지 영역").accessibilityIdentifier("reference-drop-region")
     }

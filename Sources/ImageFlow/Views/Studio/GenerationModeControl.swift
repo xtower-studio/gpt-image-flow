@@ -5,9 +5,9 @@ struct GenerationModeControl: View {
     @Binding var selection: GenerationMode
     var allowsAPI = true
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: PanelSpacing.heading) {
             PanelSectionHeading(title: "생성 방식", note: "요청당 이미지 수")
-            VStack(spacing: 3) {
+            VStack(spacing: 4) {
                 ForEach(GenerationMode.allCases, id: \.self) { mode in
                     Button { selection = mode } label: {
                         HStack(alignment: .top, spacing: 10) {
@@ -15,7 +15,7 @@ struct GenerationModeControl: View {
                                 .foregroundStyle(selection == mode ? Color.accentColor : .secondary)
                                 .frame(width: 30, height: 30)
                                 .background(selection == mode ? Color.accentColor.opacity(0.1) : Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
-                            VStack(alignment: .leading, spacing: 5) {
+                            VStack(alignment: .leading, spacing: 4) {
                                 HStack(spacing: 6) {
                                     Text(mode.label).font(StudioTypography.item)
                                     Text(mode == .sunburstAPI ? "API" : "\(mode.imagesPerRequest)장").font(StudioTypography.metadata).foregroundStyle(.secondary)
@@ -25,7 +25,7 @@ struct GenerationModeControl: View {
                                 }
                                 Text(description(mode)).font(StudioTypography.supporting).foregroundStyle(.secondary).lineSpacing(2).fixedSize(horizontal: false, vertical: true)
                             }
-                        }.padding(9).frame(maxWidth: .infinity, alignment: .leading)
+                        }.padding(.horizontal, 10).padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading)
                             .background(selection == mode ? Color.accentColor.opacity(0.065) : .clear, in: RoundedRectangle(cornerRadius: 14))
                             .contentShape(RoundedRectangle(cornerRadius: 14))
                     }.buttonStyle(.plain).disabled(mode == .sunburstAPI && !allowsAPI).accessibilityLabel(mode.label).accessibilityValue(selection == mode ? "선택됨" : "")

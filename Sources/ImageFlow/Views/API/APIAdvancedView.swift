@@ -21,7 +21,7 @@ struct APIAdvancedView: View {
                     }
                     Picker("품질", selection: $options.quality) { ForEach(options.modelInfo?.qualities ?? ImageAPIOptions.qualities, id: \.self) { Text(APIOptionsView.qualityName($0)).tag($0) } }
                     Stepper("요청당 \(options.count)장", value: $options.count, in: 1...10)
-                    APISizeControls(options: $options)
+                    APISizeControls(options: $options, horizontalInset: 0)
                     Text("K는 긴 변 기준입니다. 4K는 UHD 기준이며, 큰 해상도에서는 생성 시간과 사용료가 늘어날 수 있습니다.").font(StudioTypography.metadata).foregroundStyle(.secondary)
                     if options.modelInfo?.flexibleSize == true {
                         Button { customSizeExpanded.toggle() } label: {

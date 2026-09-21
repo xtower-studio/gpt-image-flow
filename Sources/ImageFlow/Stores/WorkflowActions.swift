@@ -8,7 +8,7 @@ extension WorkspaceStore {
         notice = "참조에 추가했습니다."
     }
     func enqueueFollowup(to original: Job, text: String, mode: GenerationMode) throws {
-        guard mode != .sunburstAPI else { throw FlowError.message("Sunburst API는 만들기 탭에서 새 요청으로 시작하세요. 기존 이미지를 참조로 추가할 수 있습니다.") }
+        guard mode != .sunburstAPI else { throw FlowError.message("OpenAI API는 만들기 탭에서 새 요청으로 시작하세요. 기존 이미지를 참조로 추가할 수 있습니다.") }
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, original.conversationID != nil else { throw FlowError.message("대화를 확인하고 후속 요청을 입력해 주세요.") }
         guard !jobs.contains(where: { $0.conversationID == original.conversationID && ($0.state.isRunning || $0.state == .queued) }) else {

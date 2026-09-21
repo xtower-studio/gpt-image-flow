@@ -53,6 +53,6 @@ extension GenerationEngine {
         let uncertain = sent && (status == nil || (status ?? 0) >= 500)
         let message = APIConnection.safeMessage(error) + (uncertain ? "\n요청이 처리됐을 수 있습니다. OpenAI 사용량을 확인하세요. 자동 재전송하지 않았습니다." : "")
         try? store.updateJob(job.id) { $0.state = uncertain ? .needsReview : .failed; $0.error = message; $0.apiRequestID = (error as? ImageAPIError)?.requestID }
-        store.notice = "Sunburst API: " + message
+        store.notice = "OpenAI API: " + message
     }
 }

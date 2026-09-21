@@ -186,7 +186,7 @@ final class ImageCollectionItem: NSCollectionViewItem {
             view.addSubview(host); NSLayoutConstraint.activate([host.leadingAnchor.constraint(equalTo: view.leadingAnchor),host.trailingAnchor.constraint(equalTo: view.trailingAnchor),host.topAnchor.constraint(equalTo: view.topAnchor),host.bottomAnchor.constraint(equalTo: view.bottomAnchor)])
             self.host = host
         }
-        view.setAccessibilityLabel("\(asset.title), \(asset.width) × \(asset.height), \(asset.actualModelLabel)\(asset.isFavorite ? ", 후보" : "")")
+        view.setAccessibilityLabel("\(asset.title), \(asset.displayDetails)\(asset.isFavorite ? ", 후보" : "")")
         view.setAccessibilitySelected(selected)
     }
 }
@@ -212,7 +212,7 @@ struct CollectionImageCell: View {
             HStack(alignment: .center, spacing: 6) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(asset.title).font(StudioTypography.item).lineLimit(1).foregroundStyle(selected ? Color.accentColor : .primary)
-                    Text("\(asset.width) × \(asset.height) · \(asset.actualModelLabel)").font(StudioTypography.metadata).foregroundStyle(.secondary).lineLimit(1)
+                    Text(asset.displayDetails).font(StudioTypography.metadata).foregroundStyle(.secondary).lineLimit(1)
                 }
                 Spacer(minLength: 0)
                 if hovered || selected {

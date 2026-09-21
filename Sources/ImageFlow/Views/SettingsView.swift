@@ -8,10 +8,10 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("ChatGPT") { LabeledContent("연결 상태", value: session.status.rawValue); Button("계정 연결 창 열기", action: session.connect) }
-            Section("Sunburst API") {
+            Section("고급 · OpenAI API") {
                 LabeledContent("연결", value: store.apiConnection.ready ? "키 저장됨" : "연결 안 됨")
                 Button("API 연결 및 키 관리…") { showAPIConnection = true }
-                Text("ChatGPT 구독과 별도로 과금됩니다.").font(StudioTypography.supporting).foregroundStyle(.secondary)
+                APIBillingNotice()
             }
             Section("생성") {
                 Toggle("절전 모드", isOn: Binding(get: { engine.eco }, set: { engine.eco = $0 }))

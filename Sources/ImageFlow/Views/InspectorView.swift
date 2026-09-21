@@ -44,11 +44,10 @@ struct InspectorView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             PanelSectionHeading(title: "생성 정보")
                             VStack(spacing: 12) {
-                                detail("실제 모델", asset.actualModelLabel)
+                                if let model = asset.actualModelLabel { detail("모델", model) }
                                 detail("생성 방식", job.requestModeLabel)
                                 detail("생성일", asset.createdAt.formatted(date: .abbreviated, time: .shortened))
                                 if let model = asset.apiModel { detail("API 모델 ID", model) }
-                                else { Text("ChatGPT 생성 모델은 확인할 수 없습니다.").font(StudioTypography.metadata).foregroundStyle(.secondary) }
                             }.padding(14).panelSurface()
                         }
                         if let url = job.conversationURL { Link(destination: url) { Label("ChatGPT 대화 열기", systemImage: "arrow.up.right") }.font(StudioTypography.control) }

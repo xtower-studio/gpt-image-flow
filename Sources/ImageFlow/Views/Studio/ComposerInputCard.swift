@@ -12,6 +12,7 @@ struct ComposerInputCard: View {
     var importFiles: ([URL]) -> Void
     @State private var focused = false
     @State private var dropTarget = false
+    @State private var editorDropTarget = false
     var body: some View {
         VStack(spacing: 0) {
             ZStack(alignment: .topLeading) {
@@ -20,13 +21,18 @@ struct ComposerInputCard: View {
                         .font(StudioTypography.body).lineSpacing(StudioTypography.lineSpacing).foregroundStyle(.secondary)
                         .padding(.horizontal, 14).padding(.top, 16).allowsHitTesting(false)
                 }
-                DropTextEditor(text: $text, onFiles: importFiles, onFocusChanged: { focused = $0 }, focusRequest: focusRequest)
+                DropTextEditor(text: $text, onFiles: importFiles, onFocusChanged: { focused = $0 }, acceptsFileDrops: true, onFileDragChanged: { editorDropTarget = $0 }, focusRequest: focusRequest)
                     .frame(height: 96).padding(8).accessibilityLabel("이미지 프롬프트")
             }
             Divider().padding(.horizontal, 14)
             referenceStrip
         }.panelSurface(editor: true)
-            .overlay { RoundedRectangle(cornerRadius: 18).strokeBorder(focused ? Color.accentColor.opacity(0.65) : .clear, lineWidth: 1.5).allowsHitTesting(false) }
+            .contentShape(RoundedRectangle(cornerRadius: 18))
+            .overlay { RoundedRectangle(cornerRadius: 18).strokeBorder(dropTarget || editorDropTarget ? Color.accentColor : focused ? Color.accentColor.opacity(0.65) : .clear, lineWidth: 1.5).allowsHitTesting(false) }
+            .dropDestination(for: URL.self) { urls, _ in
+                let files = urls.filter(\.isFileURL)
+                guard !files.isEmpty else { return false }; importFiles(files); return true
+            } isTargeted: { dropTarget = $0 }
     }
     private var referenceStrip: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -56,18 +62,12 @@ struct ComposerInputCard: View {
                     }
                 }
             } else {
-                Button("이미지를 이 영역에 놓거나 추가하세요", action: add)
+                Button("프롬프트에 이미지를 놓거나 추가하세요", action: add)
                     .font(StudioTypography.supporting).foregroundStyle(.secondary).buttonStyle(.plain)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }.padding(.horizontal, 14).padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
-            .background(dropTarget ? Color.accentColor.opacity(0.1) : .clear, in: RoundedRectangle(cornerRadius: 14))
-            .overlay { if dropTarget { RoundedRectangle(cornerRadius: 14).strokeBorder(Color.accentColor, lineWidth: 1.5).allowsHitTesting(false) } }
-            .dropDestination(for: URL.self) { urls, _ in
-                let files = urls.filter(\.isFileURL)
-                guard !files.isEmpty else { return false }; importFiles(files); return true
-            } isTargeted: { dropTarget = $0 }
             .accessibilityElement(children: .contain).accessibilityLabel("참조 이미지 영역").accessibilityIdentifier("reference-drop-region")
     }
 }

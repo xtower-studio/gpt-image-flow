@@ -12,15 +12,23 @@ struct ComposerOptions: View {
             HStack(spacing: 10) {
                 OptionTile(title: "화면 비율", symbol: "aspectratio") {
                     Menu {
-                        Picker("화면 비율", selection: $aspect) {
-                            ForEach(["자유", "1:1", "3:2", "2:3", "16:9"], id: \.self) { Text($0 == "자유" ? "자동" : $0).tag($0) }
+                        ForEach(["자유", "1:1", "3:2", "2:3", "16:9"], id: \.self) { value in
+                            Button { aspect = value } label: {
+                                if aspect == value || (aspect == "자동" && value == "자유") { Label(value == "자유" ? "자동" : value, systemImage: "checkmark") }
+                                else { Text(value == "자유" ? "자동" : value) }
+                            }
                         }
                     } label: { Text(aspect == "자유" || aspect == "자동" ? "자동" : aspect) }
                     .accessibilityLabel("화면 비율").accessibilityValue(aspect).accessibilityIdentifier("composer-aspect")
                 }
                 OptionTile(title: "배경", symbol: "square.on.square") {
                     Menu {
-                        Picker("배경", selection: $background) { ForEach(BackgroundOption.allCases, id: \.self) { Text($0.label).tag($0) } }
+                        ForEach(BackgroundOption.allCases, id: \.self) { value in
+                            Button { background = value } label: {
+                                if background == value { Label(value.label, systemImage: "checkmark") }
+                                else { Text(value.label) }
+                            }
+                        }
                     } label: { Text(background.label) }
                     .accessibilityLabel("배경").accessibilityValue(background.label).accessibilityIdentifier("composer-background")
                 }

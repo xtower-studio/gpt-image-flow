@@ -127,8 +127,8 @@ struct FreeCanvasView: View {
                 Image(systemName: "circle.grid.2x2.fill").foregroundStyle(.tertiary)
                 Text(node.asset?.isReference == true ? "참조 이미지" : node.job != nil ? "생성 작업" : "이미지").font(StudioTypography.metadata)
                 Spacer()
-                if let asset = node.asset, !asset.isReference {
-                    Text(asset.actualModelLabel).font(StudioTypography.metadata).foregroundStyle(.secondary)
+                if let asset = node.asset, !asset.isReference, let model = asset.actualModelLabel {
+                    Text(model).font(StudioTypography.metadata).foregroundStyle(.secondary)
                 } else if let job = node.job {
                     Text("\(job.requestModeLabel) · \(job.expectedImageCount)장").font(StudioTypography.metadata).foregroundStyle(.secondary)
                 }

@@ -15,8 +15,8 @@ public struct ImageAPIError: LocalizedError, Sendable {
         let message: String
         switch status {
         case 401: message = "API 키를 확인하세요. 키가 잘못되었거나 폐기되었습니다."
-        case 403: message = "이 프로젝트에 Sunburst 또는 요청 기능 권한이 없습니다. API 권한과 조직 인증을 확인하세요."
-        case 404: message = "이 계정에서 Sunburst 모델을 찾을 수 없습니다. 모델 접근 권한을 확인하세요."
+        case 403: message = "이 프로젝트에 선택한 모델 또는 요청 기능 권한이 없습니다. API 권한과 조직 인증을 확인하세요."
+        case 404: message = "이 계정에서 선택한 모델을 찾을 수 없습니다. 모델 접근 권한을 확인하세요."
         case 429: message = "API 잔액 또는 사용 한도에 도달했습니다. 결제·사용량을 확인한 뒤 다시 요청하세요."
         case 400, 422: message = "API가 요청을 거절했습니다. 프롬프트, 이미지와 고급 옵션 조합을 확인하세요."
         default: message = "OpenAI API 응답 오류 (\(status)). 자동으로 재전송하지 않았습니다."
@@ -52,10 +52,10 @@ public final class ImageAPIClient: Sendable {
         return request
     }
     public func verify(_ credentials: APICredentials) async throws {
-        let request = try request(path: "models/" + ImageAPIOptions.modelID, credentials: credentials)
+        let request = try request(path: "models", credentials: credentials)
         let (data, response) = try await session.data(for: request)
         try Self.check(response)
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any], json["id"] as? String == ImageAPIOptions.modelID else { throw FlowError.message("Sunburst 모델 접근을 확인하지 못했습니다.") }
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any], json["data"] is [[String: Any]] else { throw FlowError.message("OpenAI API 연결을 확인하지 못했습니다.") }
     }
     public static func check(_ response: URLResponse) throws {
         guard let http = response as? HTTPURLResponse else { throw FlowError.message("API 응답을 읽을 수 없습니다.") }

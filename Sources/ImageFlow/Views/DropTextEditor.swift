@@ -1,13 +1,15 @@
 import SwiftUI
 import AppKit
 
-/// Reject file drags here: only the reference region accepts attachments.
-/// Explicit paste and native text editing, IME and undo remain available.
+/// File drops become references without inserting file paths into the prompt.
+/// Text selection, IME and undo continue through NSTextView.
 struct DropTextEditor: NSViewRepresentable {
     @Binding var text: String
     @Environment(\.isEnabled) private var enabled
     var onFiles: ([URL]) -> Void
     var onFocusChanged: (Bool) -> Void = { _ in }
+    var acceptsFileDrops = false
+    var onFileDragChanged: (Bool) -> Void = { _ in }
     var focusRequest = 0
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeNSView(context: Context) -> NSScrollView {
@@ -24,6 +26,7 @@ struct DropTextEditor: NSViewRepresentable {
         view.autoresizingMask = [.width]; view.textContainer?.widthTracksTextView = true
         view.textContainerInset = NSSize(width: 4, height: 7)
         view.delegate = context.coordinator; view.onFiles = onFiles; view.onFocusChanged = onFocusChanged
+        view.acceptsFileDrops = acceptsFileDrops; view.onFileDragChanged = onFileDragChanged
         view.registerForDraggedTypes([.fileURL]); view.string = text
         scroll.documentView = view
         return scroll
@@ -32,6 +35,7 @@ struct DropTextEditor: NSViewRepresentable {
         context.coordinator.parent = self
         guard let view = scroll.documentView as? FileTextView else { return }
         view.onFiles = onFiles; view.onFocusChanged = onFocusChanged
+        view.acceptsFileDrops = acceptsFileDrops; view.onFileDragChanged = onFileDragChanged
         view.isEditable = enabled; view.isSelectable = enabled
         if !enabled, scroll.window?.firstResponder === view { scroll.window?.makeFirstResponder(nil) }
         if !view.hasMarkedText(), view.string != text { view.string = text }
@@ -56,21 +60,36 @@ struct DropTextEditor: NSViewRepresentable {
 final class FileTextView: NSTextView {
     var onFiles: (([URL]) -> Void)?
     var onFocusChanged: ((Bool) -> Void)?
+    var acceptsFileDrops = false
+    var onFileDragChanged: ((Bool) -> Void)?
     override func becomeFirstResponder() -> Bool { let result = super.becomeFirstResponder(); if result { Task { @MainActor [weak self] in self?.onFocusChanged?(true) } }; return result }
     override func resignFirstResponder() -> Bool { let result = super.resignFirstResponder(); if result { Task { @MainActor [weak self] in self?.onFocusChanged?(false) } }; return result }
     func files(_ pasteboard: NSPasteboard) -> [URL] {
         (pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL]) ?? []
     }
     override func draggingEntered(_ sender: any NSDraggingInfo) -> NSDragOperation {
-        files(sender.draggingPasteboard).isEmpty ? super.draggingEntered(sender) : []
+        guard !files(sender.draggingPasteboard).isEmpty else { return super.draggingEntered(sender) }
+        let accepted = acceptsFileDrops && isEditable
+        onFileDragChanged?(accepted)
+        return accepted ? .copy : []
     }
     override func draggingUpdated(_ sender: any NSDraggingInfo) -> NSDragOperation {
-        files(sender.draggingPasteboard).isEmpty ? super.draggingUpdated(sender) : []
+        guard !files(sender.draggingPasteboard).isEmpty else { return super.draggingUpdated(sender) }
+        return acceptsFileDrops && isEditable ? .copy : []
+    }
+    override func draggingExited(_ sender: (any NSDraggingInfo)?) {
+        onFileDragChanged?(false); super.draggingExited(sender)
+    }
+    override func prepareForDragOperation(_ sender: any NSDraggingInfo) -> Bool {
+        guard !files(sender.draggingPasteboard).isEmpty else { return super.prepareForDragOperation(sender) }
+        return acceptsFileDrops && isEditable && bounds.contains(convert(sender.draggingLocation, from: nil))
     }
     override func performDragOperation(_ sender: any NSDraggingInfo) -> Bool {
         let urls = files(sender.draggingPasteboard)
         guard !urls.isEmpty else { return super.performDragOperation(sender) }
-        return false
+        onFileDragChanged?(false)
+        guard acceptsFileDrops && isEditable, bounds.contains(convert(sender.draggingLocation, from: nil)) else { return false }
+        onFiles?(urls); return true
     }
     override func paste(_ sender: Any?) {
         let urls = files(.general)

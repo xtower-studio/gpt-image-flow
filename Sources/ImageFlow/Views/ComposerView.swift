@@ -81,7 +81,7 @@ struct ComposerView: View {
                 HStack(spacing: 5) {
                     if store.importing { ProgressView().controlSize(.mini); Text("참조 이미지 가져오는 중…") }
                     else if store.journal.paused { Image(systemName: "pause.circle"); Text("대기열 일시정지 · 작업 탭에서 계속") }
-                    else if isAPI { Image(systemName: "creditcard"); Text("OpenAI API 별도 과금") }
+                    else if isAPI { Image(systemName: "creditcard"); Text("OpenAI 청구 · 앱 수수료 없음") }
                     else { Image(systemName: engine.eco ? "leaf" : "square.stack.3d.up"); Text(engine.eco ? "절전 모드 · 요청 1개씩 실행" : "최대 3개 요청 동시 실행") }
                 }.font(StudioTypography.metadata).foregroundStyle(.secondary)
             }.padding(16)

@@ -4,9 +4,9 @@ public struct ImageAPIOptions: Codable, Equatable, Sendable {
     public static let modelID = "gpt-image-2.5-sunburst"
     public static let snapshotID = "gpt-image-2.5-sunburst-2026-09-08"
     public var model = modelID
-    public var quality = "auto"
+    public var quality = "high"
     public var size = "auto"
-    public var count = 1
+    public var count = 2
     public var background = "auto"
     public var outputFormat = "png"
     public var compression = 100
@@ -18,14 +18,25 @@ public struct ImageAPIOptions: Codable, Equatable, Sendable {
     public var maskAssetID: UUID?
     public init() {}
     public static let qualities = ["auto", "low", "medium", "high", "xhigh", "max"]
-    public static let sizes = ["auto", "1024x1024", "1536x1024", "1024x1536", "1536x864", "2048x2048", "2560x1440", "3840x2160", "2160x3840"]
+    public static let sizes = ["auto", "1024x1024", "1536x1024", "1024x1536", "1536x864", "864x1536", "2048x2048", "2048x1152", "1152x2048", "2560x1440", "3840x2160", "2160x3840"]
+    public var modelInfo: ImageAPIModel? { ImageAPIModel.resolve(model) }
+    public mutating func selectModel(_ id: String) {
+        guard let info = ImageAPIModel.resolve(id) else { return }
+        model = id
+        if !info.qualities.contains(quality) { quality = "high" }
+        if !info.flexibleSize && !info.sizes.contains(size) { size = "auto" }
+        if !info.adjustableFidelity { inputFidelity = "auto" }
+    }
     public func validate(prompt: String, referenceCount: Int) throws {
         func require(_ condition: Bool, _ message: String) throws { if !condition { throw FlowError.message(message) } }
-        try require([Self.modelID, Self.snapshotID].contains(model), "지원하는 Sunburst 모델 버전을 선택하세요.")
+        guard let info = modelInfo else { throw FlowError.message("지원하는 이미지 모델을 선택하세요.") }
+        try require(!info.hasRetired, "제공이 종료된 모델입니다. 다른 이미지 모델을 선택하세요.")
         try require(!prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && prompt.count <= 32000, "API 프롬프트는 1~32,000자로 입력하세요.")
         try require((1...10).contains(count), "API 요청당 이미지는 1~10장입니다.")
         try require((0...16).contains(referenceCount), "API 참조 이미지는 최대 16개입니다.")
-        try require(Self.qualities.contains(quality), "품질 옵션을 확인하세요.")
+        try require(info.qualities.contains(quality), "선택한 모델이 지원하는 품질을 선택하세요.")
+        try require(info.flexibleSize || info.sizes.contains(size), "이 모델은 자동, 1:1 · 1K, 3:2 · 1.5K, 2:3 · 1.5K 크기를 지원합니다.")
+        try require(info.adjustableFidelity || inputFidelity == "auto", "이 모델은 입력 충실도를 자동으로 처리합니다.")
         try require(["auto", "opaque", "transparent"].contains(background), "배경 옵션을 확인하세요.")
         try require(["png", "jpeg", "webp"].contains(outputFormat), "이미지 형식을 확인하세요.")
         try require(!(background == "transparent" && outputFormat == "jpeg"), "투명 배경에는 PNG 또는 WebP를 선택하세요.")
@@ -47,7 +58,7 @@ public struct ImageAPIOptions: Codable, Equatable, Sendable {
         var result: [String: Any] = ["model": model, "prompt": prompt, "n": count, "quality": quality,
             "size": size, "background": background, "output_format": outputFormat, "moderation": moderation, "stream": stream]
         if outputFormat != "png" { result["output_compression"] = compression }
-        if editing && inputFidelity != "auto" { result["input_fidelity"] = inputFidelity }
+        if editing && inputFidelity != "auto" && modelInfo?.adjustableFidelity == true { result["input_fidelity"] = inputFidelity }
         if stream { result["partial_images"] = partialImages }
         if !user.isEmpty { result["user"] = user }
         return result

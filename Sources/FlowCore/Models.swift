@@ -32,7 +32,8 @@ public struct Asset: Codable, Identifiable, Equatable, Sendable {
     public var isFavorite: Bool
     public var generationMetadata: ImageGenerationMetadata?
     public var apiModel: String?
-    public var actualModelLabel: String { apiModel.map { $0.hasPrefix(ImageAPIOptions.modelID) ? "Sunburst · API" : $0 } ?? "모델 비공개" }
+    public var actualModelLabel: String? { apiModel.map { ImageAPIModel.label($0) + " · API" } }
+    public var displayDetails: String { ["\(width.formatted()) × \(height.formatted())", actualModelLabel].compactMap { $0 }.joined(separator: " · ") }
     public var jobID: UUID?
     public var parentID: UUID?
     public init(id: UUID = UUID(), projectID: UUID, filename: String, title: String,

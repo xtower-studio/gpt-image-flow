@@ -10,14 +10,14 @@ public enum GenerationMode: String, Codable, CaseIterable, Sendable {
     public static let allCases: [Self] = [.automatic, .sunburstAPI, .instant]
     public var selectable: Self { self == .sunburstExperimental ? .automatic : self }
     public var label: String {
-        switch self { case .automatic: "자동"; case .sunburstExperimental: "이전 Sunburst 실험"; case .sunburstAPI: "Sunburst"; case .instant: "Instant" }
+        switch self { case .automatic: "자동"; case .sunburstExperimental: "이전 Sunburst 실험"; case .sunburstAPI: "고급"; case .instant: "빠르게" }
     }
     public var imagesPerRequest: Int {
-        switch self { case .automatic: 4; case .sunburstExperimental: 2; case .sunburstAPI: 1; case .instant: 1 }
+        switch self { case .automatic: 4; case .sunburstExperimental: 2; case .sunburstAPI: 2; case .instant: 1 }
     }
     public var explanation: String {
         switch self {
-        case .automatic: "매우 높은 추론으로 4장을 동시에 생성합니다."
+        case .automatic: "가장 적절한 모델을 자동으로 선택합니다. 한 번에 4장을 생성합니다."
         case .sunburstExperimental: "이전 ChatGPT 실험 방식입니다. 실제 모델은 확인할 수 없습니다."
         case .sunburstAPI: "OpenAI API로 직접 생성합니다. API 키와 별도 사용 요금이 필요합니다."
         case .instant: "가장 빠르고 저렴한 모델을 사용합니다. 한 번에 1장을 생성합니다."

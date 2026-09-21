@@ -23,8 +23,8 @@ struct JobResponseView: View {
                     if let url = job.conversationURL { Link(destination: url) { Image(systemName: "arrow.up.right.square") }.help("ChatGPT 대화 열기") }
                 }
                 DisclosureGroup("보낸 프롬프트") { Text(job.prompt).font(StudioTypography.body).textSelection(.enabled).padding(.top, 8) }.padding(14).panelSurface()
-                if job.apiOptions != nil {
-                    Text("Sunburst · OpenAI API").font(StudioTypography.control)
+                if let options = job.apiOptions {
+                    Text(ImageAPIModel.label(options.model) + " · OpenAI API").font(StudioTypography.control)
                     if let data = engine.apiPreviews[job.id], let image = NSImage(data: data) { Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 180).accessibilityLabel("API 생성 중 미리보기") }
                     if let id = job.apiRequestID { Text(id).font(StudioTypography.code).textSelection(.enabled) }
                     if let usage = job.apiUsageJSON { DisclosureGroup("API 사용량") { Text(usage).font(StudioTypography.code).textSelection(.enabled) } }

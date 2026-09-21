@@ -41,7 +41,7 @@ public enum JobRules {
                        label: variation.isEmpty ? "요청 \(index + 1)" : variation,
                        referenceIDs: project.referenceIDs, parentID: parentID)
             job.generationMode = mode; job.apiOptions = api; job.requestedImageCount = api?.count ?? mode.imagesPerRequest
-            job.reasoning = mode.reasoning
+            job.reasoning = api == nil ? mode.reasoning : nil
             job.inputPrompt = [prompt, variation.isEmpty ? nil : variation].compactMap { $0 }.joined(separator: "\n")
             if let api { job.prompt = job.inputPrompt!; try api.validate(prompt: job.prompt, referenceCount: job.referenceIDs.count) }
             job.requestedAspect = project.aspect; job.requestedBackground = project.background

@@ -56,8 +56,8 @@ private final class APIProtocolFixture: URLProtocol, @unchecked Sendable {
     override func startLoading() {
         guard request.url?.host == "api.openai.com", request.value(forHTTPHeaderField: "Authorization") == "Bearer fixture-only" else { client?.urlProtocol(self, didFailWithError: URLError(.badURL)); return }
         let path = request.url!.path
-        if path.hasPrefix("/v1/models/") {
-            respond(#"{"id":"gpt-image-2.5-sunburst"}"#); return
+        if path == "/v1/models" {
+            respond(#"{"data":[{"id":"gpt-image-2.5-flare"}]}"#); return
         }
         guard request.httpMethod == "POST" else { client?.urlProtocol(self, didFailWithError: URLError(.badURL)); return }
         if path == "/v1/images/edits" {

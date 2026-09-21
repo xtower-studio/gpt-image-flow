@@ -90,9 +90,9 @@ final class ImageOptionsTests: XCTestCase {
             XCTAssertNil(evidence("conflict",v2).model)
         }
         var asset = Asset(projectID: UUID(), filename: "image.png", title: "Sunburst", width: 1254, height: 1254, digest: "hash", isReference: false)
-        XCTAssertEqual(asset.actualModelLabel, "모델 비공개")
+        XCTAssertNil(asset.actualModelLabel)
         asset.generationMetadata = evidence("smimage", "24")
         let restored = try JSONDecoder().decode(Asset.self, from: JSONEncoder().encode(asset))
-        XCTAssertEqual(restored.actualModelLabel, "모델 비공개")
+        XCTAssertNil(restored.actualModelLabel)
     }
 }

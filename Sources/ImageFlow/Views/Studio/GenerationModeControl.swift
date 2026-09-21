@@ -39,9 +39,9 @@ struct GenerationModeControl: View {
     }
     private func description(_ mode: GenerationMode) -> String {
         switch mode {
-        case .automatic: "매우 높은 추론으로 4장 동시 생성"
+        case .automatic: "가장 적절한 모델을 자동으로 선택"
         case .sunburstExperimental: "이전 실험 방식"
-        case .sunburstAPI: "API 키로 연결 · 별도 사용 요금"
+        case .sunburstAPI: "모델과 생성 옵션을 직접 선택 · API"
         case .instant: "가장 빠르고 저렴한 모델"
         }
     }

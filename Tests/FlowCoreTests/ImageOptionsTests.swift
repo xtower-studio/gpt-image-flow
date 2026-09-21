@@ -10,7 +10,7 @@ final class ImageOptionsTests: XCTestCase {
             XCTAssertEqual(job.prompt, project.prompt + "\nn=4")
             XCTAssertEqual(job.generationMode, .automatic)
             XCTAssertEqual(job.expectedImageCount, 4)
-            XCTAssertEqual(job.reasoning, .light)
+            XCTAssertEqual(job.reasoning, .extended)
         }
     }
     func testEnglishOptionsAndRequestModeAreFrozen() throws {
@@ -51,7 +51,7 @@ final class ImageOptionsTests: XCTestCase {
         let legacy = try JSONDecoder().decode(Job.self, from: JSONEncoder().encode(old))
         XCTAssertEqual(legacy.expectedImageCount, 1); XCTAssertEqual(legacy.prompt, "original")
         XCTAssertEqual(legacy.executionReasoning, .standard)
-        XCTAssertEqual(GenerationMode.migrated(from: .sunburst), .sunburstExperimental)
+        XCTAssertEqual(GenerationMode.migrated(from: .sunburst), .automatic)
         XCTAssertEqual(GenerationMode.migrated(from: .flare), .instant)
     }
     func testPartialBatchKeepsResultsAndRequiresReviewWithoutRequeue() throws {
@@ -78,21 +78,21 @@ final class ImageOptionsTests: XCTestCase {
         restored.state = .responded; restored.responseText = "Follow up"
         XCTAssertTrue(restored.showsAttention)
     }
-    func testOnlyGenSizeIdentifiesModelRegardlessOfV2() throws {
+    func testWebMetadataNeverIdentifiesModel() throws {
         func evidence(_ size: String?, _ v2: String?) -> ImageGenerationMetadata {
             ImageGenerationMetadata(fileID: "file_test", messageID: "response", genSize: size, genSizeV2: v2)
         }
         for v2 in [nil, "24", "32", "48", "conflict", "future"] as [String?] {
-            XCTAssertEqual(evidence("smimage",v2).model, .flare)
-            XCTAssertEqual(evidence("image",v2).model, .sunburst)
+            XCTAssertNil(evidence("smimage",v2).model)
+            XCTAssertNil(evidence("image",v2).model)
             XCTAssertNil(evidence(nil,v2).model)
             XCTAssertNil(evidence("unknown",v2).model)
             XCTAssertNil(evidence("conflict",v2).model)
         }
         var asset = Asset(projectID: UUID(), filename: "image.png", title: "Sunburst", width: 1254, height: 1254, digest: "hash", isReference: false)
-        XCTAssertEqual(asset.actualModelLabel, "확인되지 않음")
+        XCTAssertEqual(asset.actualModelLabel, "모델 비공개")
         asset.generationMetadata = evidence("smimage", "24")
         let restored = try JSONDecoder().decode(Asset.self, from: JSONEncoder().encode(asset))
-        XCTAssertEqual(restored.actualModelLabel, "Flare")
+        XCTAssertEqual(restored.actualModelLabel, "모델 비공개")
     }
 }

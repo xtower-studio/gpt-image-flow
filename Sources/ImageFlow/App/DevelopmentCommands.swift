@@ -21,6 +21,43 @@ extension FlowAppDelegate {
                     window.setContentSize(NSSize(width: width, height: height)); window.center()
                 }
                 NSApp.activate(ignoringOtherApps: true)
+            } else if operation == "apiStatus" {
+                let jobs = store.jobs.filter { $0.apiOptions != nil }.map { job in
+                    ["id": job.id.uuidString, "project": job.projectID.uuidString, "state": job.state.rawValue,
+                     "results": job.results.count, "requestID": job.apiRequestID ?? "", "error": job.error ?? "",
+                     "stream": job.apiOptions?.stream ?? false] as [String: Any]
+                }
+                try JSONSerialization.data(withJSONObject: ["connected": store.apiConnection.ready, "jobs": jobs], options: .prettyPrinted)
+                    .write(to: directory.appendingPathComponent("api-status.json"))
+            } else if operation == "apiSmokeGenerate" {
+                guard store.apiConnection.ready else { throw FlowError.message("API 키 연결이 필요합니다.") }
+                // Explicit developer action only. Never launched automatically; one paid image.
+                guard !store.library.projects.contains(where: { $0.name == "API 검증 · Sunburst" }) else {
+                    throw FlowError.message("API 검증 프로젝트가 이미 있습니다. 중복 유료 요청을 중단했습니다.")
+                }
+                var project = Project(name: "API 검증 · Sunburst")
+                project.prompt = "One sculptural cobalt blue ceramic teapot on a warm ivory background, editorial product photograph, soft side light, no lettering."
+                project.generationMode = .sunburstAPI
+                var options = ImageAPIOptions(); options.quality = "low"; options.size = "1024x1024"; options.count = 1
+                project.apiOptions = options
+                store.library.projects.append(project)
+                let jobs = try JobRules.makeBatch(project: project)
+                store.reserveCanvasPositions(for: jobs); store.journal.jobs.append(contentsOf: jobs)
+                store.requestedProjectID = project.id; store.journal.paused = false; store.journal.pauseReason = nil; store.flush()
+            } else if operation == "apiSmokeEdit" {
+                guard var project = store.library.projects.first(where: { $0.name == "API 검증 · Sunburst" }),
+                      let original = store.jobs.first(where: { $0.projectID == project.id && $0.state == .saved }),
+                      let asset = original.results.first,
+                      !store.jobs.contains(where: { $0.projectID == project.id && !$0.referenceIDs.isEmpty }) else {
+                    throw FlowError.message("원본이 없거나 이미 수정 검증을 요청했습니다.")
+                }
+                project.prompt = "Keep the teapot's shape, composition and lighting. Change only its glaze from cobalt blue to terracotta orange."
+                project.referenceIDs = [asset.id]
+                project.apiOptions?.stream = true; project.apiOptions?.partialImages = 1
+                let jobs = try JobRules.makeBatch(project: project)
+                store.reserveCanvasPositions(for: jobs); store.journal.jobs.append(contentsOf: jobs)
+                store.requestedProjectID = project.id; store.requestedJobID = jobs.first?.id
+                store.journal.paused = false; store.journal.pauseReason = nil; store.flush()
             } else if operation == "verifyWorkflowRestore" {
                 let data = try Data(contentsOf: directory.appendingPathComponent("workflow-verification.json"))
                 let proof = try JSONSerialization.jsonObject(with: data) as! [String: Any]
@@ -63,7 +100,7 @@ extension FlowAppDelegate {
                 let worker = try WebWorker(slot: 0, session: session)
                 defer { worker.close() }
                 var proof: [[String: Any]] = []
-                for model in GenerationMode.allCases {
+                for model in GenerationMode.allCases.filter({ $0 != .sunburstAPI }) {
                     var project = Project(name: "Model preparation verification")
                     project.prompt = "A cobalt ceramic teapot"; project.aspect = "1:1"
                     project.background = .transparent; project.generationMode = model
@@ -78,7 +115,7 @@ extension FlowAppDelegate {
                 project.prompt = "A small cobalt blue ceramic teapot, isolated product photograph, no lettering"
                 project.aspect = "1:1"; project.background = .transparent
                 store.library.projects.append(project)
-                for model in GenerationMode.allCases {
+                for model in GenerationMode.allCases.filter({ $0 != .sunburstAPI }) {
                     project.generationMode = model
                     var job = try JobRules.makeBatch(project: project)[0]; job.label = model.label
                     store.reserveCanvasPositions(for: [job]); store.journal.jobs.append(job)

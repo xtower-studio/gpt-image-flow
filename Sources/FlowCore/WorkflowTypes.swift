@@ -6,24 +6,27 @@ public enum ImageModel: String, Codable, CaseIterable, Sendable {
     public var label: String { self == .flare ? "Flare" : "Sunburst" }
 }
 public enum GenerationMode: String, Codable, CaseIterable, Sendable {
-    case automatic, sunburstExperimental, instant
+    case automatic, sunburstExperimental, sunburstAPI, instant
+    public static let allCases: [Self] = [.automatic, .sunburstAPI, .instant]
+    public var selectable: Self { self == .sunburstExperimental ? .automatic : self }
     public var label: String {
-        switch self { case .automatic: "자동"; case .sunburstExperimental: "Sunburst (실험)"; case .instant: "Instant" }
+        switch self { case .automatic: "자동"; case .sunburstExperimental: "이전 Sunburst 실험"; case .sunburstAPI: "Sunburst"; case .instant: "Instant" }
     }
     public var imagesPerRequest: Int {
-        switch self { case .automatic: 4; case .sunburstExperimental: 2; case .instant: 1 }
+        switch self { case .automatic: 4; case .sunburstExperimental: 2; case .sunburstAPI: 1; case .instant: 1 }
     }
     public var explanation: String {
         switch self {
-        case .automatic: "4장을 동시에 생성합니다. 보통 Flare 2장, Sunburst 2장으로 구성됩니다."
-        case .sunburstExperimental: "2장을 동시에 생성합니다. 높은 확률로 Sunburst를 사용합니다."
+        case .automatic: "매우 높은 추론으로 4장을 동시에 생성합니다."
+        case .sunburstExperimental: "이전 ChatGPT 실험 방식입니다. 실제 모델은 확인할 수 없습니다."
+        case .sunburstAPI: "OpenAI API로 직접 생성합니다. API 키와 별도 사용 요금이 필요합니다."
         case .instant: "가장 빠르고 저렴한 모델을 사용합니다. 한 번에 1장을 생성합니다."
         }
     }
     // Non-instant reasoning enables automatic routing; it does not select a model.
-    public var reasoning: ReasoningLevel { self == .instant ? .instant : .light }
+    public var reasoning: ReasoningLevel { self == .instant ? .instant : self == .automatic ? .extended : .light }
     public static func migrated(from legacy: ImageModel?) -> Self {
-        switch legacy { case .flare: .instant; case .sunburst: .sunburstExperimental; case nil: .automatic }
+        switch legacy { case .flare: .instant; case .sunburst: .automatic; case nil: .automatic }
     }
 }
 public enum BackgroundOption: String, Codable, CaseIterable, Sendable {

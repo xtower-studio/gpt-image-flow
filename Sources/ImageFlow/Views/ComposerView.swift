@@ -9,6 +9,7 @@ struct ComposerView: View {
     @Environment(WorkspaceStore.self) private var store
     @Environment(WebSession.self) private var session
     @Environment(GenerationEngine.self) private var engine
+    @State private var showAPIConnection = false
     @State private var showVariations = false
     @State private var recipeName = ""
     @State private var savingRecipe = false
@@ -23,7 +24,10 @@ struct ComposerView: View {
         let lines = current.variations.split(separator: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
         return lines.isEmpty ? current.copies : lines.count
     }
-    private var totalImages: Int { count * store.selectedGenerationMode.imagesPerRequest }
+    private var isAPI: Bool { store.selectedGenerationMode == .sunburstAPI }
+    private var apiOptions: Binding<ImageAPIOptions> { Binding(get: { current.apiOptions ?? ImageAPIOptions() }, set: { var p = current; p.apiOptions = $0; store.updateProject(p) }) }
+    private var imagesPerRequest: Int { isAPI ? apiOptions.wrappedValue.count : store.selectedGenerationMode.imagesPerRequest }
+    private var totalImages: Int { count * imagesPerRequest }
     private var prompt: Binding<String> { editing == nil ? binding(\.prompt) : $editPrompt }
     private var canGenerate: Bool { store.storageReady && !store.importing && !prompt.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && count <= 50 }
     private func binding<Value>(_ path: WritableKeyPath<Project, Value>) -> Binding<Value> {
@@ -46,10 +50,14 @@ struct ComposerView: View {
                             importFiles: { store.importImages($0, projectID: project.id) })
                     }
                     GenerationModeControl(selection: Binding(get: { store.selectedGenerationMode }, set: { store.selectedGenerationMode = $0 }))
-                    ComposerOptions(aspect: binding(\.aspect),
-                        background: Binding(get: { current.background ?? .automatic }, set: { var copy = current; copy.background = $0; store.updateProject(copy) }),
-                        count: Binding(get: { count }, set: { value in var copy = current; copy.copies = min(50, max(1, value)); store.updateProject(copy) }),
-                        countLocked: editing != nil || !current.variations.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    if isAPI {
+                        APIOptionsView(options: apiOptions, requests: Binding(get: { count }, set: { var p = current; p.copies = min(50, max(1, $0)); store.updateProject(p) }), countLocked: editing != nil || !current.variations.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, projectID: project.id, references: references)
+                    } else {
+                        ComposerOptions(aspect: binding(\.aspect),
+                            background: Binding(get: { current.background ?? .automatic }, set: { var copy = current; copy.background = $0; store.updateProject(copy) }),
+                            count: Binding(get: { count }, set: { value in var copy = current; copy.copies = min(50, max(1, value)); store.updateProject(copy) }),
+                            countLocked: editing != nil || !current.variations.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
                     DisclosureGroup(isExpanded: $showVariations) {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("한 줄마다 별도 요청으로 보냅니다. 공통 프롬프트에 더할 내용을 적으세요.").font(StudioTypography.supporting).foregroundStyle(.secondary)
@@ -64,19 +72,22 @@ struct ComposerView: View {
                 HStack {
                     Text("총 \(totalImages)장").font(StudioTypography.section)
                     Spacer()
-                    Text("\(count)회 요청 × \(store.selectedGenerationMode.imagesPerRequest)장").font(StudioTypography.metadata).foregroundStyle(.secondary)
+                    Text("\(count)회 요청 × \(imagesPerRequest)장").font(StudioTypography.metadata).foregroundStyle(.secondary)
                 }.monospacedDigit().accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(count)회 요청 × \(store.selectedGenerationMode.imagesPerRequest)장 = 총 \(totalImages)장").accessibilityIdentifier("generation-total")
-                Button(action: generate) {
-                    HStack { Image(systemName: "sparkles"); Text(editing == nil ? "\(totalImages)개 이미지 생성" : "\(totalImages)개 수정본 생성").font(StudioTypography.action); Spacer(); Text("⌘↵").font(StudioTypography.metadata).opacity(0.65) }.frame(maxWidth: .infinity).padding(.vertical, 5)
-                }.studioActionButton(prominent: true).buttonBorderShape(.capsule).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(!canGenerate)
+                    .accessibilityLabel("\(count)회 요청 × \(imagesPerRequest)장 = 총 \(totalImages)장").accessibilityIdentifier("generation-total")
+                Button { if isAPI && !store.apiConnection.ready { showAPIConnection = true } else { generate() } } label: {
+                    HStack { Image(systemName: "sparkles"); Text(isAPI ? (store.apiConnection.ready ? "\(totalImages)장 생성 · API 유료" : "API 연결하기") : editing == nil ? "\(totalImages)개 이미지 생성" : "\(totalImages)개 수정본 생성").font(StudioTypography.action); Spacer(); Text("⌘↵").font(StudioTypography.metadata).opacity(0.65) }.frame(maxWidth: .infinity).padding(.vertical, 5)
+                }.studioActionButton(prominent: true).buttonBorderShape(.capsule).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(!canGenerate && !(isAPI && !store.apiConnection.ready))
                 HStack(spacing: 5) {
                     if store.importing { ProgressView().controlSize(.mini); Text("참조 이미지 가져오는 중…") }
                     else if store.journal.paused { Image(systemName: "pause.circle"); Text("대기열 일시정지 · 작업 탭에서 계속") }
+                    else if isAPI { Image(systemName: "creditcard"); Text("OpenAI API 별도 과금") }
                     else { Image(systemName: engine.eco ? "leaf" : "square.stack.3d.up"); Text(engine.eco ? "절전 모드 · 요청 1개씩 실행" : "최대 3개 요청 동시 실행") }
                 }.font(StudioTypography.metadata).foregroundStyle(.secondary)
             }.padding(16)
         }
+        .sheet(isPresented: $showAPIConnection) { APIConnectionView() }
+        .onChange(of: store.selectedGenerationMode) { _, mode in if mode == .sunburstAPI && !store.apiConnection.ready { showAPIConnection = true } }
         .alert("레시피 저장", isPresented: $savingRecipe) {
             TextField("레시피 이름", text: $recipeName)
             Button("저장") { store.saveRecipe(project: current, name: recipeName) }.disabled(recipeName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -104,7 +115,7 @@ struct ComposerView: View {
         do {
             try store.enqueue(project: request, parentID: editing?.id)
             store.notice = "\(count)회 요청 · 총 \(totalImages)장 생성을 추가했습니다. 작업 탭에서 진행 상태를 확인할 수 있습니다."
-            if session.status != .ready { session.connect() }
+            if !isAPI && session.status != .ready { session.connect() }
             if editing != nil { editPrompt = ""; editing = nil }
         } catch { store.report(error) }
     }

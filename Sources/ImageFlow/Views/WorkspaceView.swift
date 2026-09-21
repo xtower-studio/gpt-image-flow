@@ -212,8 +212,8 @@ struct WorkspaceView: View {
     private func openJob(_ job: Job) { selectedProject = job.projectID.uuidString; Task { @MainActor in await Task.yield(); responseJobID = job.id; panel = .reply; panelVisible = true } }
     private func reuse(_ job: Job) {
         guard var project else { return }
-        project.prompt = job.prompt; project.variations = ""; project.copies = 1; project.referenceIDs = job.referenceIDs; project.reasoning = job.reasoning
-        project.prompt = job.inputPrompt ?? job.prompt
+        project.apiOptions = job.apiOptions
+        project.prompt = job.inputPrompt ?? job.prompt; project.variations = ""; project.copies = 1; project.referenceIDs = job.referenceIDs; project.reasoning = job.reasoning
         project.aspect = job.requestedAspect ?? "자유"; project.background = job.requestedBackground
         if let mode = job.generationMode { store.selectedGenerationMode = mode }
         store.updateProject(project); editing = nil; startCreate()

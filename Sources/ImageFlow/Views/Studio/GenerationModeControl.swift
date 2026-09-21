@@ -3,6 +3,7 @@ import FlowCore
 
 struct GenerationModeControl: View {
     @Binding var selection: GenerationMode
+    var allowsAPI = true
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             PanelSectionHeading(title: "생성 방식", note: "요청당 이미지 수")
@@ -17,7 +18,7 @@ struct GenerationModeControl: View {
                             VStack(alignment: .leading, spacing: 5) {
                                 HStack(spacing: 6) {
                                     Text(mode.label).font(StudioTypography.item)
-                                    Text("\(mode.imagesPerRequest)장").font(StudioTypography.metadata).foregroundStyle(.secondary)
+                                    Text(mode == .sunburstAPI ? "API" : "\(mode.imagesPerRequest)장").font(StudioTypography.metadata).foregroundStyle(.secondary)
                                         .padding(.horizontal, 6).padding(.vertical, 2).background(.primary.opacity(0.045), in: Capsule())
                                     Spacer(minLength: 0)
                                     Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.accentColor).opacity(selection == mode ? 1 : 0)
@@ -27,19 +28,20 @@ struct GenerationModeControl: View {
                         }.padding(9).frame(maxWidth: .infinity, alignment: .leading)
                             .background(selection == mode ? Color.accentColor.opacity(0.065) : .clear, in: RoundedRectangle(cornerRadius: 14))
                             .contentShape(RoundedRectangle(cornerRadius: 14))
-                    }.buttonStyle(.plain).accessibilityLabel(mode.label).accessibilityValue(selection == mode ? "선택됨" : "")
+                    }.buttonStyle(.plain).disabled(mode == .sunburstAPI && !allowsAPI).accessibilityLabel(mode.label).accessibilityValue(selection == mode ? "선택됨" : "")
                         .accessibilityHint(mode.explanation).accessibilityIdentifier("generation-mode-\(mode.rawValue)")
                 }
             }.padding(4).panelSurface()
         }
     }
     private func symbol(_ mode: GenerationMode) -> String {
-        switch mode { case .automatic: "sparkles"; case .sunburstExperimental: "sun.max"; case .instant: "bolt" }
+        switch mode { case .automatic: "sparkles"; case .sunburstExperimental, .sunburstAPI: "sun.max"; case .instant: "bolt" }
     }
     private func description(_ mode: GenerationMode) -> String {
         switch mode {
-        case .automatic: "보통 Flare 2장 + Sunburst 2장"
-        case .sunburstExperimental: "높은 확률로 Sunburst 사용"
+        case .automatic: "매우 높은 추론으로 4장 동시 생성"
+        case .sunburstExperimental: "이전 실험 방식"
+        case .sunburstAPI: "API 키로 연결 · 별도 사용 요금"
         case .instant: "가장 빠르고 저렴한 모델"
         }
     }

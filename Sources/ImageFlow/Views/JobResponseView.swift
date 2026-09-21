@@ -6,6 +6,7 @@ struct JobResponseView: View {
     @Environment(WorkspaceStore.self) private var store
     @Environment(GenerationEngine.self) private var engine
     @Environment(WebSession.self) private var session
+    @State private var showAPIConnection = false
     @SceneStorage private var followup: String
     init(jobID: UUID) {
         self.jobID = jobID
@@ -22,6 +23,14 @@ struct JobResponseView: View {
                     if let url = job.conversationURL { Link(destination: url) { Image(systemName: "arrow.up.right.square") }.help("ChatGPT 대화 열기") }
                 }
                 DisclosureGroup("보낸 프롬프트") { Text(job.prompt).font(StudioTypography.body).textSelection(.enabled).padding(.top, 8) }.padding(14).panelSurface()
+                if job.apiOptions != nil {
+                    Text("Sunburst · OpenAI API").font(StudioTypography.control)
+                    if let data = engine.apiPreviews[job.id], let image = NSImage(data: data) { Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 180).accessibilityLabel("API 생성 중 미리보기") }
+                    if let id = job.apiRequestID { Text(id).font(StudioTypography.code).textSelection(.enabled) }
+                    if let usage = job.apiUsageJSON { DisclosureGroup("API 사용량") { Text(usage).font(StudioTypography.code).textSelection(.enabled) } }
+                    Link("OpenAI 사용량 확인 ↗", destination: URL(string: "https://platform.openai.com/usage")!)
+                    if job.state == .failed { Button("API 연결 관리…") { showAPIConnection = true } }
+                }
                 if !job.results.isEmpty {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))]) { ForEach(job.results) { asset in AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 110) } }
                 }
@@ -34,7 +43,10 @@ struct JobResponseView: View {
                         Button("대기 취소", role: .destructive) { store.cancelQueued(job.id) }
                     }
                 }
-                if job.state == .needsReview {
+                if job.state == .needsReview && job.apiOptions != nil {
+                    Text("API는 완료 결과를 다시 조회할 수 없습니다. 받은 이미지는 보관했습니다. 사용량을 확인하고 새 요청 여부를 결정하세요.").font(StudioTypography.supporting)
+                    Button("기록 닫기") { do { try store.updateJob(job.id) { $0.state = .cancelled } } catch { store.report(error) } }
+                } else if job.state == .needsReview {
                     Text("전송됐을 수 있어 자동으로 다시 보내지 않았습니다. 다른 작업은 계속됩니다.").font(StudioTypography.supporting).foregroundStyle(.secondary)
                     if session.status != .ready { Button("ChatGPT 연결", action: session.connect) }
                     else if engine.activeCount >= (engine.eco ? 1 : 3) { Text("진행 중인 작업이 끝나면 기존 결과를 확인할 수 있습니다.").font(StudioTypography.body).foregroundStyle(.secondary) }
@@ -50,18 +62,21 @@ struct JobResponseView: View {
                         DropTextEditor(text: $followup, onFiles: { _ in store.notice = "이미지를 첨부하려면 만들기 탭에서 참조를 추가해 주세요." }).frame(height: 112).padding(5)
                     }.panelSurface(editor: true)
                     VStack(alignment: .leading, spacing: 12) {
-                        GenerationModeControl(selection: Binding(get: { store.selectedGenerationMode }, set: { store.selectedGenerationMode = $0 }))
+                        GenerationModeControl(selection: Binding(get: { store.selectedGenerationMode == .sunburstAPI ? .automatic : store.selectedGenerationMode }, set: { store.selectedGenerationMode = $0 }), allowsAPI: false)
                         Button {
-                            do { try store.enqueueFollowup(to: job, text: followup, mode: store.selectedGenerationMode); followup = ""; store.notice = "후속 요청을 대기열에 추가했습니다." }
+                            do { try store.enqueueFollowup(to: job, text: followup, mode: store.selectedGenerationMode == .sunburstAPI ? .automatic : store.selectedGenerationMode); followup = ""; store.notice = "후속 요청을 대기열에 추가했습니다." }
                             catch { store.report(error) }
                         } label: {
-                            Label("\(store.selectedGenerationMode.imagesPerRequest)개 이미지 요청", systemImage: "sparkles").font(StudioTypography.action).frame(maxWidth: .infinity).padding(.vertical, 3)
+                            Label("\(store.selectedGenerationMode == .sunburstAPI ? 4 : store.selectedGenerationMode.imagesPerRequest)개 이미지 요청", systemImage: "sparkles").font(StudioTypography.action).frame(maxWidth: .infinity).padding(.vertical, 3)
                         }.studioActionButton(prominent: true).buttonBorderShape(.capsule).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(followup.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
                 } else if job.state == .failed || job.state == .needsLogin {
-                    Button("다시 준비") { if session.status != .ready { session.connect() }; engine.retryBeforeSubmission(job) }
+                    Button(job.apiOptions != nil ? "다시 요청 · API 유료" : "다시 준비") {
+                        if job.apiOptions != nil && !store.apiConnection.ready { showAPIConnection = true }
+                        else { if job.apiOptions == nil && session.status != .ready { session.connect() }; engine.retryBeforeSubmission(job) }
+                    }
                 }
-            }.padding(16)
+            }.padding(16).sheet(isPresented: $showAPIConnection) { APIConnectionView() }
         }
     }
 }

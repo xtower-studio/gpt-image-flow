@@ -15,7 +15,7 @@ public actor AssetVault {
                          isReference: true)
     }
     public func store(_ bytes: Data, projectID: UUID, title: String, isReference: Bool,
-                      jobID: UUID? = nil, parentID: UUID? = nil, generationMetadata: ImageGenerationMetadata? = nil) throws -> Asset {
+                      jobID: UUID? = nil, parentID: UUID? = nil, generationMetadata: ImageGenerationMetadata? = nil, apiModel: String? = nil) throws -> Asset {
         guard bytes.count <= 50 * 1024 * 1024 else { throw FlowError.message("앱에서 가져올 수 있는 파일은 50MB 이하입니다.") }
         guard let source = CGImageSourceCreateWithData(bytes as CFData, nil),
               let type = CGImageSourceGetType(source),
@@ -33,7 +33,7 @@ public actor AssetVault {
         var asset = Asset(id: id, projectID: projectID, filename: "\(id).\(ext)", title: title,
                           width: width, height: height, digest: Self.hash(bytes), isReference: isReference,
                           jobID: jobID, parentID: parentID)
-        asset.generationMetadata = generationMetadata
+        asset.generationMetadata = generationMetadata; asset.apiModel = apiModel
         for folder in ["Originals", "Thumbnails", "Receipts"] {
             try FileManager.default.createDirectory(at: root.appendingPathComponent(folder), withIntermediateDirectories: true)
         }

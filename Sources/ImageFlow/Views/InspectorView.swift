@@ -7,7 +7,6 @@ struct InspectorView: View {
     var reuse: (Job) -> Void
     @Environment(WorkspaceStore.self) private var store
     @Environment(GenerationEngine.self) private var engine
-    @State private var checkingMetadata = false
     var body: some View {
         ScrollView {
             if let asset {
@@ -48,18 +47,8 @@ struct InspectorView: View {
                                 detail("실제 모델", asset.actualModelLabel)
                                 detail("생성 방식", job.requestModeLabel)
                                 detail("생성일", asset.createdAt.formatted(date: .abbreviated, time: .shortened))
-                                if let size = asset.generationMetadata?.genSize {
-                                    DisclosureGroup("식별 근거") { Text("gen_size: \(size)").font(StudioTypography.code).foregroundStyle(.secondary).textSelection(.enabled).padding(.top, 8) }.font(StudioTypography.metadata).foregroundStyle(.secondary)
-                                }
-                                if asset.generationMetadata?.model == nil {
-                                    Button(checkingMetadata ? "모델 정보 확인 중…" : "모델 정보 확인") {
-                                        checkingMetadata = true
-                                        Task { @MainActor in
-                                            defer { checkingMetadata = false }
-                                            do { try await engine.refreshMetadata(for: asset) } catch { store.report(error) }
-                                        }
-                                    }.buttonStyle(.borderless).disabled(checkingMetadata).font(StudioTypography.supporting)
-                                }
+                                if let model = asset.apiModel { detail("API 모델 ID", model) }
+                                else { Text("ChatGPT 생성 모델은 확인할 수 없습니다.").font(StudioTypography.metadata).foregroundStyle(.secondary) }
                             }.padding(14).panelSurface()
                         }
                         if let url = job.conversationURL { Link(destination: url) { Label("ChatGPT 대화 열기", systemImage: "arrow.up.right") }.font(StudioTypography.control) }

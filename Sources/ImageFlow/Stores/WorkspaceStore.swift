@@ -19,8 +19,9 @@ import FlowCore
     @ObservationIgnored let vault: AssetVault
     @ObservationIgnored var persistence: LibraryPersistence?
     @ObservationIgnored var draftSave: Task<Void, Never>?
+    let apiConnection = APIConnection()
     var selectedGenerationMode: GenerationMode {
-        get { library.preferredGenerationMode ?? .migrated(from: library.preferredModel) }
+        get { (library.preferredGenerationMode ?? .migrated(from: library.preferredModel)).selectable }
         set { library.preferredGenerationMode = newValue; flush() }
     }
     func dismissAttention(_ ids: Set<UUID>) {
@@ -88,6 +89,7 @@ import FlowCore
     }
     func enqueue(project: Project, parentID: UUID? = nil) throws {
         guard storageReady else { throw FlowError.message("저장 공간을 확인해 주세요.") }
+        if project.generationMode == .sunburstAPI, !apiConnection.ready { throw FlowError.message("Sunburst API를 먼저 연결하세요.") }
         let jobs = try JobRules.makeBatch(project: project, parentID: parentID)
         for id in project.referenceIDs { guard let asset = asset(id), FileManager.default.fileExists(atPath: vault.original(asset).path) else { throw FlowError.message("참조 원본을 찾을 수 없습니다. 다시 추가해 주세요.") } }
         reserveCanvasPositions(for: jobs)

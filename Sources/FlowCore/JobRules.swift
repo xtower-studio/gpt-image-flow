@@ -30,7 +30,9 @@ public enum JobRules {
         guard (1...maximum).contains(count) else { throw FlowError.message("요청 횟수는 1~\(maximum)회로 설정해 주세요.") }
         let batchID = UUID()
         let mode = project.generationMode ?? GenerationMode.migrated(from: project.imageModel)
-        return (0..<count).map { index in
+        let api = mode == .sunburstAPI ? (project.apiOptions ?? ImageAPIOptions()) : nil
+        if let api { try api.validate(prompt: prompt, referenceCount: project.referenceIDs.count) }
+        return try (0..<count).map { index in
             let variation = variations.isEmpty ? "" : variations[index]
             let size = ["자유", "자동"].contains(project.aspect) ? nil : "size:\(project.aspect)"
             let full = [prompt, variation.isEmpty ? nil : variation, size, project.background?.promptOption, "n=\(mode.imagesPerRequest)"]
@@ -38,9 +40,10 @@ public enum JobRules {
             var job = Job(batchID: batchID, projectID: project.id, prompt: full,
                        label: variation.isEmpty ? "요청 \(index + 1)" : variation,
                        referenceIDs: project.referenceIDs, parentID: parentID)
-            job.generationMode = mode; job.requestedImageCount = mode.imagesPerRequest
+            job.generationMode = mode; job.apiOptions = api; job.requestedImageCount = api?.count ?? mode.imagesPerRequest
             job.reasoning = mode.reasoning
             job.inputPrompt = [prompt, variation.isEmpty ? nil : variation].compactMap { $0 }.joined(separator: "\n")
+            if let api { job.prompt = job.inputPrompt!; try api.validate(prompt: job.prompt, referenceCount: job.referenceIDs.count) }
             job.requestedAspect = project.aspect; job.requestedBackground = project.background
             return job
         }

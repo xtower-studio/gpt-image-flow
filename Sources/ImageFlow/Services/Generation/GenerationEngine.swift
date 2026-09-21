@@ -4,6 +4,7 @@ import FlowCore
 
 @MainActor @Observable final class GenerationEngine {
     var activeCount = 0
+    var apiPreviews: [UUID: Data] = [:]
     var eco: Bool { didSet { UserDefaults.standard.set(eco, forKey: "ecoMode") } }
     var nextStart: Date?
     @ObservationIgnored let store: WorkspaceStore
@@ -33,12 +34,12 @@ import FlowCore
         activeCount = running.count
         let cooldowns = store.journal.workerAvailableAt ?? [:]
         nextStart = cooldowns.values.filter { $0 > Date() }.min()
-        guard store.storageReady, !store.restoringAssets, !store.journal.paused, session.status == .ready else { return }
+        guard store.storageReady, !store.restoringAssets, !store.journal.paused else { return }
         let available = QueueAdmission.slots(limit: eco ? policy.ecoConcurrency : policy.defaultConcurrency,
-            occupied: Set(slots.values), availableAt: cooldowns, now: Date())
+            occupied: Set(slots.values), availableAt: [:], now: Date())
         for slot in available {
             let executing = store.jobs.filter { running[$0.id] != nil }
-            guard let job = store.jobs.first(where: { $0.state == .queued && running[$0.id] == nil && QueueAdmission.canStart($0, alongside: executing) }) else { break }
+            guard let job = store.jobs.first(where: { $0.state == .queued && ($0.apiOptions != nil || (session.status == .ready && (cooldowns[String(slot)] ?? .distantPast) <= Date())) && running[$0.id] == nil && QueueAdmission.canStart($0, alongside: executing) }) else { continue }
             launch(job, recovery: false, slot: slot)
         }
     }
@@ -48,10 +49,11 @@ import FlowCore
         running[job.id] = Task { [weak self] in
             guard let self else { return }
             defer {
+                apiPreviews.removeValue(forKey: job.id)
                 workers[job.id]?.close(); workers.removeValue(forKey: job.id)
                 running.removeValue(forKey: job.id)
                 slots.removeValue(forKey: job.id)
-                if !recovery {
+                if !recovery && job.apiOptions == nil {
                     if store.journal.workerAvailableAt == nil { store.journal.workerAvailableAt = [:] }
                     store.journal.workerAvailableAt?[String(slot)] = Date().addingTimeInterval(Double.random(in: policy.submissionSpacingMinimumSeconds...policy.submissionSpacingMaximumSeconds))
                     store.flush()
@@ -59,8 +61,13 @@ import FlowCore
                 activeCount = running.count
                 watchdogs.removeValue(forKey: job.id)?.cancel()
             }
-            do { try await execute(job, recovery: recovery, slot: slot) }
-            catch { handle(error, job: job.id) }
+            do {
+                if job.apiOptions != nil { try await executeAPI(job) }
+                else { try await execute(job, recovery: recovery, slot: slot) }
+            } catch {
+                if job.apiOptions != nil { handleAPI(error, job: job) }
+                else { handle(error, job: job.id) }
+            }
         }
         watchdogs[job.id] = Task { [weak self] in
             guard let self else { return }
@@ -199,7 +206,7 @@ import FlowCore
     }
     func retryBeforeSubmission(_ job: Job) {
         guard [.needsLogin, .failed].contains(job.state), (job.conversationID == nil || job.continuationOf != nil) else { return }
-        do { try store.updateJob(job.id) { $0.state = .queued; $0.error = nil } }
+        do { try store.updateJob(job.id) { $0.state = .queued; $0.error = nil; if $0.apiOptions != nil { $0.submittedAt = nil; $0.apiRequestID = nil } } }
         catch { store.report(error) }
     }
 }

@@ -13,6 +13,7 @@ public struct Project: Codable, Identifiable, Equatable, Sendable {
     public var reasoning: ReasoningLevel?
     public var imageModel: ImageModel? // Legacy request preference, never output identity.
     public var generationMode: GenerationMode?
+    public var apiOptions: ImageAPIOptions?
     public var layout: [String: CanvasPoint]?
     public var viewport: CanvasViewport?
     public init(name: String) { self.name = name }
@@ -30,7 +31,8 @@ public struct Asset: Codable, Identifiable, Equatable, Sendable {
     public var isReference: Bool
     public var isFavorite: Bool
     public var generationMetadata: ImageGenerationMetadata?
-    public var actualModelLabel: String { generationMetadata?.model?.label ?? "확인되지 않음" }
+    public var apiModel: String?
+    public var actualModelLabel: String { apiModel.map { $0.hasPrefix(ImageAPIOptions.modelID) ? "Sunburst · API" : $0 } ?? "모델 비공개" }
     public var jobID: UUID?
     public var parentID: UUID?
     public init(id: UUID = UUID(), projectID: UUID, filename: String, title: String,
@@ -83,6 +85,7 @@ public struct Job: Codable, Identifiable, Equatable, Sendable {
     public var reasoning: ReasoningLevel?
     public var imageModel: ImageModel? // Legacy request preference, never output identity.
     public var generationMode: GenerationMode?
+    public var apiOptions: ImageAPIOptions?
     public var dismissedAttentionState: JobState?
     public var showsAttention: Bool { state.needsAttention && dismissedAttentionState != state }
     public var requestedImageCount: Int?
@@ -91,7 +94,9 @@ public struct Job: Codable, Identifiable, Equatable, Sendable {
     public var requestedBackground: BackgroundOption?
     public var expectedImageCount: Int { requestedImageCount ?? 1 }
     public var requestModeLabel: String { generationMode?.label ?? "이전 요청" }
-    public var executionReasoning: ReasoningLevel { generationMode?.reasoning ?? reasoning ?? .light }
+    public var executionReasoning: ReasoningLevel { reasoning ?? generationMode?.reasoning ?? .light }
+    public var apiRequestID: String?
+    public var apiUsageJSON: String?
     public var appliedReasoning: Int?
     public var continuationOf: UUID?
     public var responseText: String?

@@ -47,7 +47,7 @@ struct ComposerOptions: View {
     }
 }
 
-private struct OptionTile<Content: View>: View {
+struct OptionTile<Content: View>: View {
     let title: String
     let symbol: String
     @ViewBuilder var content: () -> Content

@@ -13,22 +13,38 @@ struct APIOptionsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                PanelSectionHeading(title: "고급 설정")
+                PanelSectionHeading(title: "출력 설정")
                 Button(store.apiConnection.ready ? "연결 관리" : "API 연결") { connect = true }.buttonStyle(.borderless).font(StudioTypography.metadata)
             }
-            APIBillingNotice()
-            VStack(spacing: 14) {
-                APIModelPicker(options: $options)
-                Picker("품질", selection: $options.quality) { ForEach(options.modelInfo?.qualities ?? ImageAPIOptions.qualities, id: \.self) { Text(Self.qualityName($0)).tag($0) } }
+            APIModelPicker(options: $options)
+                .font(StudioTypography.supporting).padding(12).panelSurface(radius: 16)
+            APISizeControls(options: $options)
+            HStack(spacing: 10) {
+                OptionTile(title: "품질", symbol: "sparkles") {
+                    Menu {
+                        ForEach(options.modelInfo?.qualities ?? ImageAPIOptions.qualities, id: \.self) { value in
+                            Button(Self.qualityName(value)) { options.quality = value }
+                        }
+                    } label: { Text(Self.qualityName(options.quality)) }
                     .accessibilityIdentifier("api-quality")
-                Picker("이미지 크기", selection: $options.size) {
-                    ForEach(options.modelInfo?.sizes ?? ImageAPIOptions.sizes, id: \.self) { Text(ImageAPISize.label($0)).tag($0) }
-                    if !(options.modelInfo?.sizes ?? ImageAPIOptions.sizes).contains(options.size) { Text(ImageAPISize.label(options.size) + " · 사용자 지정").tag(options.size) }
-                }.accessibilityIdentifier("api-size")
-                Stepper("요청당 \(options.count)장", value: $options.count, in: 1...10).accessibilityIdentifier("api-image-count")
-                HStack { Text("요청 횟수"); Spacer(); TextField("횟수", value: $requests, format: .number.grouping(.never)).frame(width: 50).multilineTextAlignment(.trailing).disabled(countLocked).accessibilityLabel("API 요청 횟수") }
-            }.font(StudioTypography.supporting).padding(14).panelSurface()
+                }
+                OptionTile(title: "배경", symbol: "square.on.square") {
+                    Menu {
+                        Button("자동") { options.background = "auto" }
+                        Button("불투명") { options.background = "opaque" }
+                        Button("투명") {
+                            options.background = "transparent"
+                            if options.outputFormat == "jpeg" { options.outputFormat = "png" }
+                        }
+                    } label: { Text(options.background == "transparent" ? "투명" : options.background == "opaque" ? "불투명" : "자동") }
+                    .accessibilityIdentifier("api-background")
+                }
+            }
+            APIQuantityRow(title: "요청당 이미지", value: $options.count, maximum: 10)
+                .accessibilityIdentifier("api-image-count")
+            APIQuantityRow(title: "요청 횟수", value: $requests, maximum: 50).disabled(countLocked)
             Button { advanced = true } label: { Label("모든 API 옵션…", systemImage: "slider.horizontal.3") }.buttonStyle(.borderless).font(StudioTypography.control)
+            APIBillingNotice().padding(.top, 4)
         }.sheet(isPresented: $advanced) { APIAdvancedView(options: $options, projectID: projectID, references: references) }
             .sheet(isPresented: $connect) { APIConnectionView() }
     }
@@ -65,6 +81,54 @@ struct APIModelPicker: View {
                 }
             }
             if adjusted { Text("모델이 지원하는 품질·크기·입력 설정으로 맞췄습니다.").font(StudioTypography.metadata).foregroundStyle(.secondary) }
+        }
+    }
+}
+
+struct APISizeControls: View {
+    @Binding var options: ImageAPIOptions
+    var body: some View {
+        HStack(spacing: 10) {
+            OptionTile(title: "화면 비율", symbol: "aspectratio") {
+                Menu {
+                    Button("자동") { options.size = "auto" }
+                    ForEach(ImageSizeSelection.aspects(for: options), id: \.self) { value in
+                        Button(value) { options.size = ImageSizeSelection.selectingAspect(value, in: options) }
+                    }
+                } label: { Text(ImageSizeSelection.aspect(options.size)) }
+                .accessibilityLabel("화면 비율").accessibilityIdentifier("api-aspect")
+            }
+            OptionTile(title: "해상도", symbol: "arrow.up.left.and.arrow.down.right") {
+                Menu {
+                    if options.size == "auto" { Text("비율과 해상도를 자동으로 선택합니다") }
+                    ForEach(ImageSizeSelection.resolutions(for: options), id: \.self) { value in
+                        Button(value) { options.size = ImageSizeSelection.selectingResolution(value, in: options) }
+                    }
+                } label: { Text(ImageSizeSelection.resolution(options.size)) }
+                .accessibilityLabel("해상도").accessibilityIdentifier("api-resolution")
+            }
+        }
+    }
+}
+
+private struct APIQuantityRow: View {
+    let title: String
+    @Binding var value: Int
+    let maximum: Int
+    var body: some View {
+        HStack {
+            Text(title).font(StudioTypography.control)
+            Spacer()
+            HStack(spacing: 2) {
+                Button { value = max(1, value - 1) } label: { Image(systemName: "minus").frame(width: 28, height: 30).contentShape(Rectangle()) }
+                    .disabled(value <= 1).accessibilityLabel(title + " 줄이기")
+                TextField(title, value: $value, format: .number.grouping(.never))
+                    .textFieldStyle(.plain).multilineTextAlignment(.center).frame(width: 32).monospacedDigit()
+                    .accessibilityLabel(title + " 입력")
+                    .onChange(of: value) { _, number in value = min(maximum, max(1, number)) }
+                Button { value = min(maximum, value + 1) } label: { Image(systemName: "plus").frame(width: 28, height: 30).contentShape(Rectangle()) }
+                    .disabled(value >= maximum).accessibilityLabel(title + " 늘리기")
+            }.buttonStyle(.plain).font(StudioTypography.item).panelSurface(radius: 12)
         }
     }
 }

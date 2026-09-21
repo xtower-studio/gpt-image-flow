@@ -2,7 +2,7 @@
 
 ChatGPT 이미지 생성의 참조 첨부 → 여러 시안 생성 → 비교 → 수정 → 내보내기를 하나로 연결하는 네이티브 macOS 앱.
 
-**0.9.1 생성 옵션 개선 버전.** SwiftUI/AppKit으로 작업 공간을 만들고, ChatGPT 작업이 진행되는 동안만 WKWebView를 사용한다. 자동·빠르게는 ChatGPT를, 고급은 OpenAI 이미지 API를 사용한다. API 사용료는 OpenAI가 직접 청구하며 Image Flow는 어떠한 수수료도 받지 않는다. API 연결은 선택 사항이다. 자유 캔버스, 최대 3개 요청 병렬 실행, 내부 이미지 재첨부, 비교·수정·내보내기를 지원한다. [0.9.1 옵션·드롭·모델 개선](docs/V091_GENERATION_UX.md)을 참고한다.
+**0.9.2 출력 설정 개선 버전.** SwiftUI/AppKit으로 작업 공간을 만들고, ChatGPT 작업이 진행되는 동안만 WKWebView를 사용한다. 자동·빠르게는 ChatGPT를, 고급은 OpenAI 이미지 API를 사용한다. API 사용료는 OpenAI가 직접 청구하며 Image Flow는 어떠한 수수료도 받지 않는다. API 연결은 선택 사항이다. 자유 캔버스, 최대 3개 요청 병렬 실행, 내부 이미지 재첨부, 비교·수정·내보내기를 지원한다. [0.9.2 출력 설정 개선](docs/V092_OUTPUT_SETTINGS.md)을 참고한다.
 
 ## 실행
 
@@ -69,6 +69,7 @@ ChatGPT 편집기에 **이미지 만들기 (`picture_v2`) Pill과 프롬프트�
 
 ## 관련 문서
 
+- [0.9.2 출력 설정 개선](docs/V092_OUTPUT_SETTINGS.md)
 - [0.9.1 생성 옵션·드롭·모델 개선](docs/V091_GENERATION_UX.md)
 - [0.9 Sunburst API 연결·옵션·실제 검증](docs/V09_SUNBURST_API.md)
 - [0.8 Studio 패널 재설계](docs/V08_PANEL_DESIGN.md)

@@ -7,6 +7,7 @@ struct APIAdvancedView: View {
     let references: [Asset]
     @Environment(WorkspaceStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @State private var customSizeExpanded = false
     @State private var importing = false
     @State private var localError: String?
     var body: some View {
@@ -20,13 +21,18 @@ struct APIAdvancedView: View {
                     }
                     Picker("품질", selection: $options.quality) { ForEach(options.modelInfo?.qualities ?? ImageAPIOptions.qualities, id: \.self) { Text(APIOptionsView.qualityName($0)).tag($0) } }
                     Stepper("요청당 \(options.count)장", value: $options.count, in: 1...10)
-                    Picker("이미지 크기", selection: $options.size) {
-                        ForEach(options.modelInfo?.sizes ?? ImageAPIOptions.sizes, id: \.self) { Text(ImageAPISize.label($0)).tag($0) }
-                        if !(options.modelInfo?.sizes ?? []).contains(options.size) { Text("사용자 지정").tag(options.size) }
-                    }
+                    APISizeControls(options: $options)
                     Text("K는 긴 변 기준입니다. 4K는 UHD 기준이며, 큰 해상도에서는 생성 시간과 사용료가 늘어날 수 있습니다.").font(StudioTypography.metadata).foregroundStyle(.secondary)
                     if options.modelInfo?.flexibleSize == true {
-                        DisclosureGroup("정확한 크기 직접 지정") {
+                        Button { customSizeExpanded.toggle() } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: customSizeExpanded ? "chevron.down" : "chevron.right")
+                                Text("정확한 크기 직접 지정")
+                                Spacer()
+                            }.frame(maxWidth: .infinity, minHeight: 32, alignment: .leading).contentShape(Rectangle())
+                        }.buttonStyle(.plain).accessibilityIdentifier("api-custom-size-toggle")
+                            .accessibilityValue(customSizeExpanded ? "펼쳐짐" : "접힘")
+                        if customSizeExpanded {
                             TextField("가로x세로", text: $options.size).accessibilityIdentifier("api-custom-size")
                             Text("auto 또는 가로x세로. 각 변은 16의 배수, 최대 3,840px. 비율 1:3–3:1, 총 655,360–8,294,400픽셀. 2560×1440을 넘는 해상도는 실험적입니다.").font(StudioTypography.metadata).foregroundStyle(.secondary)
                         }

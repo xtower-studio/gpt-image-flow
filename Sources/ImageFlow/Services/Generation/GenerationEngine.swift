@@ -35,11 +35,13 @@ import FlowCore
         let cooldowns = store.journal.workerAvailableAt ?? [:]
         nextStart = cooldowns.values.filter { $0 > Date() }.min()
         guard store.storageReady, !store.restoringAssets, !store.journal.paused else { return }
+        store.advanceWorkflows()
+        guard store.storageReady else { return }
         let available = QueueAdmission.slots(limit: eco ? policy.ecoConcurrency : policy.defaultConcurrency,
             occupied: Set(slots.values), availableAt: [:], now: Date())
         for slot in available {
             let executing = store.jobs.filter { running[$0.id] != nil }
-            guard let job = store.jobs.first(where: { $0.state == .queued && ($0.apiOptions != nil || (session.status == .ready && (cooldowns[String(slot)] ?? .distantPast) <= Date())) && running[$0.id] == nil && QueueAdmission.canStart($0, alongside: executing) }) else { continue }
+            guard let job = store.jobs.first(where: { $0.state == .queued && store.workflowAllows($0) && ($0.apiOptions != nil || (session.status == .ready && (cooldowns[String(slot)] ?? .distantPast) <= Date())) && running[$0.id] == nil && QueueAdmission.canStart($0, alongside: executing) }) else { continue }
             launch(job, recovery: false, slot: slot)
         }
     }

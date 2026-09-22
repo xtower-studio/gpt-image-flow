@@ -51,7 +51,7 @@ struct WorkspaceView: View {
                     if let project {
                         activityStrip
                         board(project)
-                        footer
+                        if boardMode == "grid" { footer }
                     } else { ContentUnavailableView("저장 공간을 확인해 주세요", systemImage: "externaldrive.badge.exclamationmark", description: Text(store.errorMessage ?? "")) }
                 }
                 .background(StudioPalette.stage)
@@ -65,7 +65,7 @@ struct WorkspaceView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Picker("보기 방식", selection: $boardMode) {
                         Label("컬렉션", systemImage: "square.grid.2x2").tag("grid")
-                        Label("캔버스", systemImage: "square.dashed").tag("canvas")
+                        Label("워크플로 캔버스", systemImage: "point.3.connected.trianglepath.dotted").tag("canvas")
                     }.pickerStyle(.segmented).labelsHidden().frame(width: 76).help("컬렉션 ⌘1 · 캔버스 ⌘2")
                 }
                 ToolbarItem(placement: .primaryAction) {
@@ -105,6 +105,7 @@ struct WorkspaceView: View {
         }
         .onAppear { if selectedProject.isEmpty { selectedProject = lastSelectedProject } }
         .onChange(of: selectedProject) { _, value in lastSelectedProject = value; resetSelection() }
+        .onChange(of: boardMode) { _, mode in if mode == "canvas" { panelVisible = false; selection = [] } }
         .onChange(of: query) { _, _ in selection.formIntersection(Set(assets.map(\.id))) }
         .onChange(of: favoritesOnly) { _, _ in selection.formIntersection(Set(assets.map(\.id))) }
         .onChange(of: store.requestedProjectID) { _, value in if let value { selectedProject = value.uuidString; store.requestedProjectID = nil } }
@@ -119,7 +120,7 @@ struct WorkspaceView: View {
     @ViewBuilder private func board(_ project: Project) -> some View {
         Group {
             if boardMode == "canvas" {
-                FreeCanvasView(project: project, assets: canvasAssets(project), jobs: projectJobs, selection: $selection, preview: { comparison = [$0] }, edit: beginEdit, openJob: openJob).id(project.id)
+                WorkflowCanvasView(project: project, assets: canvasAssets(project), jobs: projectJobs, selection: $selection, preview: { comparison = [$0] }, edit: beginEdit, openJob: openJob).id(project.id)
             } else if assets.isEmpty {
                 EmptyStudioView(filtered: favoritesOnly || !query.isEmpty, running: projectJobs.contains { $0.state.isRunning || $0.state == .queued }, create: startCreate, importImages: { store.selectImages(projectID: project.id) }, clear: { query = ""; favoritesOnly = false })
             } else {

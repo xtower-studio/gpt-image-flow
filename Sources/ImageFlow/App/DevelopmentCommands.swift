@@ -9,7 +9,9 @@ extension FlowAppDelegate {
               let operation = command["operation"], let store else { return }
         try? FileManager.default.removeItem(at: url)
         do {
-            if operation == "studioPreview" {
+            if ["workflowSeedQA", "workflowRunQA", "workflowStatus"].contains(operation) {
+                try workflowCommand(operation, directory: directory)
+            } else if operation == "studioPreview" {
                 for (key, preference) in [("reduceTransparency", "devPreviewReduceTransparency"), ("increaseContrast", "devPreviewIncreaseContrast")] {
                     if let value = command[key] { UserDefaults.standard.set(value == "true", forKey: preference) }
                 }

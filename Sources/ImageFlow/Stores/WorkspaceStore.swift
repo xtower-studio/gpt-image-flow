@@ -43,6 +43,9 @@ import FlowCore
             self.persistence = persistence; library = try persistence.load()
             journal = try QueueJournal.load(journalURL)
             journal.jobs = journal.jobs.map(JobRules.recovered)
+            for index in (journal.workflowRuns ?? []).indices where journal.workflowRuns?[index].state == .running {
+                journal.workflowRuns?[index].state = .paused
+            }
             // A single interrupted request does not block unrelated queued work.
             if journal.paused && journal.pauseReason == nil { journal.pauseReason = "이전 버전에서 일시정지한 작업입니다. 계속을 누르면 대기 작업을 실행합니다." }
             if library.projects.isEmpty { library.projects = [Project(name: "첫 프로젝트")] }

@@ -16,6 +16,7 @@ public struct Project: Codable, Identifiable, Equatable, Sendable {
     public var apiOptions: ImageAPIOptions?
     public var layout: [String: CanvasPoint]?
     public var viewport: CanvasViewport?
+    public var workflow: WorkflowGraph?
     public init(name: String) { self.name = name }
 }
 

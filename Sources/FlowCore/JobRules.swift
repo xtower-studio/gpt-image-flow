@@ -70,6 +70,7 @@ public enum JobRules {
 public struct QueueJournal: Codable, Sendable {
     public var schemaVersion = 1
     public var jobs: [Job] = []
+    public var workflowRuns: [WorkflowRun]?
     public var paused = false
     public var nextSubmissionAt = Date.distantPast
     public var workerAvailableAt: [String: Date]?

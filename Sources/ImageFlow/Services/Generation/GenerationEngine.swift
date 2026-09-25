@@ -155,7 +155,7 @@ import FlowCore
                 let byFile = Dictionary(uniqueKeysWithValues: metadata.map { ($0.fileID, $0) })
                 for (index, image) in candidates.enumerated() {
                     let existing = store.jobs.first(where: { $0.id == job.id })?.results ?? []
-                    if existing.contains(where: { $0.generationMetadata?.fileID == image.fileID }) { continue }
+                    if existing.contains(where: { $0.generationMetadata?.matches(fileID: image.fileID) == true }) { continue }
                     let bytes = try await worker.bytes(for: image)
                     let digest = AssetVault.hash(bytes)
                     if existing.contains(where: { $0.generationMetadata == nil && $0.digest == digest }) { continue }

@@ -9,7 +9,9 @@ extension FlowAppDelegate {
               let operation = command["operation"], let store else { return }
         try? FileManager.default.removeItem(at: url)
         do {
-            if ["workflowSeedQA", "workflowRunQA", "workflowStatus"].contains(operation) {
+            if operation == "verifyComposerConcurrency" {
+                try await verifyComposerConcurrency(directory: directory)
+            } else if ["workflowSeedQA", "workflowRunQA", "workflowStatus"].contains(operation) {
                 try workflowCommand(operation, directory: directory)
             } else if operation == "studioPreview" {
                 for (key, preference) in [("reduceTransparency", "devPreviewReduceTransparency"), ("increaseContrast", "devPreviewIncreaseContrast")] {
@@ -98,6 +100,18 @@ extension FlowAppDelegate {
                 try await worker.load(job.conversationID)
                 let evidence = try await worker.generationMetadata()
                 try JSONEncoder().encode(evidence).write(to: directory.appendingPathComponent("actual-model-metadata.json"))
+            } else if operation == "inspectImageComposer", let session {
+                let worker = try WebWorker(slot: 0, session: session)
+                defer { worker.close() }
+                try await worker.load()
+                let script = """
+                JSON.stringify({editors:Array.from(document.querySelectorAll('#prompt-textarea,[contenteditable]')).map(el=>({html:el.outerHTML,editable:el.isContentEditable})),buttons:Array.from(document.querySelectorAll('form button')).map(el=>({text:el.innerText,label:el.getAttribute('aria-label'),testid:el.getAttribute('data-testid')}))})
+                """
+                var proof: [String: String] = ["before": try await worker.web.evaluateJavaScript(script) as? String ?? ""]
+                do { _ = try await worker.call("composeImage", payload: ["prompt": "A cobalt ceramic teapot"], as: WebWorker.Ack.self) }
+                catch { proof["error"] = String(describing: error) }
+                proof["after"] = try await worker.web.evaluateJavaScript(script) as? String ?? ""
+                try JSONSerialization.data(withJSONObject: proof, options: .prettyPrinted).write(to: directory.appendingPathComponent("image-composer.json"))
             } else if operation == "verifyImageModels", let session {
                 let worker = try WebWorker(slot: 0, session: session)
                 defer { worker.close() }
@@ -107,11 +121,38 @@ extension FlowAppDelegate {
                     project.prompt = "A cobalt ceramic teapot"; project.aspect = "1:1"
                     project.background = .transparent; project.generationMode = model
                     let job = try JobRules.makeBatch(project: project)[0]
-                    _ = try await worker.prepare(job: job, files: [])
-                    let text = try await worker.web.evaluateJavaScript("document.querySelector('#prompt-textarea')?.innerText || ''") as? String ?? ""
+                    let files: [URL] = model == .automatic ? store.library.assets.first(where: { $0.id == UUID(uuidString: "D1A84191-D395-43FD-9D34-7AA9763AE45D") }).map { [store.vault.original($0)] } ?? [] : []
+                    do { _ = try await worker.prepare(job: job, files: files) }
+                    catch {
+                        proof.append(["model": model.label, "error": String(describing: error), "form": try await worker.web.evaluateJavaScript("document.querySelector('form')?.outerHTML || ''") as? String ?? ""])
+                        try JSONSerialization.data(withJSONObject: proof, options: .prettyPrinted).write(to: directory.appendingPathComponent("image-model-verification.json"))
+                        throw error
+                    }
+                    let text = try await worker.web.evaluateJavaScript("document.querySelector('#prompt-textarea,div[contenteditable=true].ProseMirror')?.innerText || ''") as? String ?? ""
                     proof.append(["model": model.label, "applied": worker.appliedReasoning ?? -1, "composer": text, "imageModeVerified": true])
                     try JSONSerialization.data(withJSONObject: proof, options: .prettyPrinted).write(to: directory.appendingPathComponent("image-model-verification.json"))
                 }
+            } else if operation == "retryComposerCompatibility", let engine,
+                      let project = store.library.projects.first(where: { $0.name == "입력창 호환성 검증 · 2026-09" }),
+                      let job = store.jobs.first(where: { $0.projectID == project.id && $0.state == .failed && $0.submittedAt == nil }) {
+                engine.retryBeforeSubmission(job)
+            } else if operation == "composerCompatibilitySmoke" {
+                let name = "입력창 호환성 검증 · 2026-09"
+                guard !store.library.projects.contains(where: { $0.name == name }) else {
+                    throw FlowError.message("이미 검증 요청이 있습니다. 중복 전송하지 않았습니다.")
+                }
+                var project = Project(name: name)
+                project.prompt = "A small cobalt blue ceramic teapot on an ivory background, product photograph, no lettering."
+                store.library.projects.append(project)
+                for mode in [GenerationMode.automatic, .instant] {
+                    project.generationMode = mode
+                    if mode == .automatic, let reference = store.library.assets.first(where: { $0.id == UUID(uuidString: "D1A84191-D395-43FD-9D34-7AA9763AE45D") }) {
+                        project.referenceIDs = [reference.id]
+                    } else { project.referenceIDs = [] }
+                    let jobs = try JobRules.makeBatch(project: project)
+                    store.reserveCanvasPositions(for: jobs); store.journal.jobs.append(contentsOf: jobs)
+                }
+                store.journal.paused = false; store.journal.pauseReason = nil; store.flush()
             } else if operation == "imageModelSmoke" {
                 var project = Project(name: "v0.6 검증 · 생성 방식")
                 project.prompt = "A small cobalt blue ceramic teapot, isolated product photograph, no lettering"
@@ -244,7 +285,7 @@ extension FlowAppDelegate {
                 }
                 try JSONSerialization.data(withJSONObject: info).write(to: directory.appendingPathComponent("windows.json"))
             }
-            else if operation == "inspectConversation", let job = store.jobs.last, let conversation = job.conversationID, let session {
+            else if operation == "inspectConversation", let job = store.jobs.last, let conversation = command["conversation"].flatMap({ UUID(uuidString: $0) != nil ? $0 : nil }) ?? job.conversationID, let session {
                 let worker = try WebWorker(slot: 0, session: session)
                 defer { worker.close() }
                 try await worker.load(conversation)
@@ -253,6 +294,7 @@ extension FlowAppDelegate {
                 let diagnostics = try await worker.web.evaluateJavaScript("""
                   JSON.stringify({assistantHTML:Array.from(document.querySelectorAll('[data-message-author-role=assistant]')).map(el=>el.outerHTML.slice(0,18000)),streaming:Array.from(document.querySelectorAll('button[data-testid=stop-button],button[aria-label*=Stop],[data-is-streaming=true]')).map(el=>({tag:el.tagName,text:el.innerText,html:el.outerHTML.slice(0,1200)})),text:(document.querySelector('main')?.innerText || '').slice(-5000),
                   images:Array.from(document.querySelectorAll('main img')).map(im=>({width:im.naturalWidth,src:(im.currentSrc||im.src).split('?')[0],role:im.closest('[data-message-author-role]')?.dataset.messageAuthorRole,alt:im.alt})),
+                  messageBlocks:Array.from(document.querySelectorAll('main [data-chatgpt-search-message-ids]')).filter(el=>!el.matches('[data-chatgpt-search-unit-key$=":user"]')).map(el=>el.outerHTML.slice(0,16000)),
                   articles:Array.from(document.querySelectorAll('main article')).map(el=>({role:el.getAttribute('data-message-author-role'),id:el.getAttribute('data-testid'),classes:el.className}))})
                 """)
                 if let text = diagnostics as? String { try text.write(to: directory.appendingPathComponent("conversation-diagnostics.json"), atomically: true, encoding: .utf8) }

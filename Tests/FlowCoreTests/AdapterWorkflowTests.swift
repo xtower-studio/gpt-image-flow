@@ -95,7 +95,7 @@ final class AdapterWorkflowTests: XCTestCase {
         """)
         defer { web.stopLoading() }
         do { _ = try await call(web, "composeImage", payload: ["prompt":"A teapot"]); XCTFail("Accepted a discarded pill") }
-        catch { XCTAssertTrue(String(describing: error).contains("image-mode-not-applied")) }
+        catch { XCTAssertTrue(String(describing: error).contains("image-tool-menu-unavailable")) }
     }
     @MainActor func testSubmitRejectsMissingImageModeBeforeClickingSend() async throws {
         let web = try await fixture("<form><div id='prompt-textarea' contenteditable='true'>A teapot</div><button type='button' data-testid='send-button' onclick='window.sent=true'>Send</button></form>")

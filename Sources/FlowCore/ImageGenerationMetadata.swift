@@ -11,4 +11,14 @@ public struct ImageGenerationMetadata: Codable, Equatable, Sendable {
     }
     // Undocumented web metadata is not evidence of model identity.
     public var model: ImageModel? { nil }
+    // Gallery containers can repeat the same message ID for each image. Match
+    // earlier captures as well as the normalized ID used after a page reload.
+    public func matches(fileID candidate: String) -> Bool {
+        if fileID == candidate { return true }
+        let messages = messageID.split(whereSeparator: { $0.isWhitespace })
+        guard fileID.hasPrefix("generated-"), let first = messages.first,
+              UUID(uuidString: String(first)) != nil, messages.allSatisfy({ $0 == first }),
+              let ordinal = fileID.split(separator: "-").last, Int(ordinal) != nil else { return false }
+        return candidate == "generated-\(first)-\(ordinal)"
+    }
 }

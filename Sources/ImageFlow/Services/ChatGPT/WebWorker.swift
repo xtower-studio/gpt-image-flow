@@ -116,9 +116,31 @@ enum WorkerError: LocalizedError {
     func prepare(job: Job, files: [URL]) async throws -> WebSnapshot {
         try await load(job.continuationOf != nil ? job.conversationID : nil)
         do {
-            _ = try await call("composeImage", payload: ["prompt": job.prompt], as: Ack.self)
+            // Only retry local preparation, before attachment or submission. A
+            // late React layout replacement can discard the first tool selection.
+            for attempt in 0..<3 {
+                do {
+                    _ = try await call("composeImage", payload: ["prompt": job.prompt], as: Ack.self)
+                    break
+                } catch {
+                    let message = (error as NSError).userInfo["WKJavaScriptExceptionMessage"] as? String ?? ""
+                    guard attempt < 2, ["image-mode-not-applied", "image-tool-menu-unavailable", "image-composer-unavailable"].contains(where: message.contains) else { throw error }
+                    try await wait(0.6)
+                }
+            }
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
-            throw WorkerError.website("이미지 만들기 도구를 입력창에 적용하지 못해 전송하지 않았습니다. ChatGPT 연결 창을 확인해 주세요.")
+            let message = (error as NSError).userInfo["WKJavaScriptExceptionMessage"] as? String ?? ""
+            let reason: String
+            if message.contains("image-tool-menu-unavailable") {
+                reason = "ChatGPT의 도구 메뉴가 준비되지 않았습니다."
+            } else if message.contains("image-composer-unavailable") {
+                reason = "ChatGPT 입력창을 찾을 수 없습니다."
+            } else {
+                reason = "ChatGPT에서 이미지 생성 도구의 선택을 확인하지 못했습니다."
+            }
+            throw WorkerError.website("\(reason) 요청은 전송되지 않았으므로 다시 시도할 수 있습니다.")
         }
         try await wait(0.4)
         if !files.isEmpty {

@@ -1,10 +1,11 @@
 // Runs only in the worker's authenticated chatgpt.com main frame.
 if (location.hostname !== 'chatgpt.com') throw new Error('unexpected-origin');
 const composer = () => document.querySelector('#prompt-textarea,textarea[data-id="root"],div[contenteditable="true"].ProseMirror');
-const send = () => document.querySelector('button[data-testid="send-button"],button[data-testid="composer-send-button"],button[aria-label="Send prompt"],button[aria-label="프롬프트 보내기"]');
+const composerForm = () => composer()?.closest('form');
+const send = () => composerForm()?.querySelector('button[type="submit"][aria-label="보내기"],button[type="submit"][aria-label="Send"]') || document.querySelector('button[data-testid="send-button"],button[data-testid="composer-send-button"],button[aria-label="Send prompt"],button[aria-label="프롬프트 보내기"]');
 const enabled = el => !!el && !el.disabled && el.getAttribute('aria-disabled') !== 'true';
 const fileID = s => s.match(/file[-_][A-Za-z0-9]+/)?.[0] || s;
-const reasoningPill = () => document.querySelector('[data-composer-transition-slot="trailing"] button.__composer-pill[aria-haspopup="menu"]') || Array.from((composer()?.closest('form') || document).querySelectorAll('button.__composer-pill')).find(el => /Instant|추론|Thinking|Reasoning|High|Standard|Light|Extended|Heavy|Pro|Max|Medium|Low|최대|낮|중간|높|표준/i.test(el.innerText));
+const reasoningPill = () => composerForm()?.querySelector('button[data-composer-navigation-target="reasoning"]') || document.querySelector('[data-composer-transition-slot="trailing"] button.__composer-pill[aria-haspopup="menu"]') || Array.from((composer()?.closest('form') || document).querySelectorAll('button.__composer-pill')).find(el => /Instant|추론|Thinking|Reasoning|High|Standard|Light|Extended|Heavy|Pro|Max|Medium|Low|최대|낮|중간|높|표준/i.test(el.innerText));
 if (operation === 'openReasoning') {
   const pill = reasoningPill();
   if (!pill) return JSON.stringify({ok:false});
@@ -27,31 +28,68 @@ if (operation === 'setReasoning') {
   document.querySelector('[role="slider"]')?.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));
   return JSON.stringify({level:applied,label:reasoningPill()?.innerText || ''});
 }
-const imageModeActive = () => !!composer()?.querySelector('[data-system-hint-type="picture_v2"],[data-inline-selection-pill][data-id="picture_v2"]');
-if (operation === 'composeImage') {
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+const plusButton = () => composerForm()?.querySelector('button[data-composer-navigation-target="add-context"],button[data-testid="composer-plus-btn"]');
+const toolPillSelector = '[data-system-hint-type="picture_v2"],[data-inline-selection-pill][data-id="picture_v2"]';
+const imageModeActive = () => !!composer()?.querySelector(toolPillSelector) ||
+  Array.from(composerForm()?.querySelectorAll('button[aria-label]') || []).some(el =>
+    !composer()?.contains(el) && /^(이미지 생성 제거|이미지 만들기 제거|Remove (?:Create image|Create images|Image generation))$/i.test(el.getAttribute('aria-label')));
+const writePrompt = (prompt, withPill) => {
   const el = composer();
   if (!el || el.tagName === 'TEXTAREA' || !el.isContentEditable) throw new Error('image-composer-unavailable');
-  if (typeof payload.prompt !== 'string' || !payload.prompt.trim()) throw new Error('image-prompt-empty');
   el.focus();
-  // Build DOM nodes rather than interpolating user text into HTML. ProseMirror's
-  // mutation observer parses the inline tool node together with the prompt.
-  const paragraphs = payload.prompt.split('\n').map(line => {
+  const paragraphs = prompt.split('\n').map(line => {
     const p = document.createElement('p'); p.textContent = line; return p;
   });
-  const pill = document.createElement('span');
-  for (const [key, value] of Object.entries({
-    contenteditable:'false', 'data-inline-selection-pill':'', 'data-id':'picture_v2',
-    'data-symbol':'ecosystemMention', 'data-keyword':'이미지 만들기',
-    'data-system-hint-type':'picture_v2',
-    class:'inline-flex items-center gap-1 rounded-md bg-token-main-surface-secondary px-2 py-0.5 text-sm font-medium select-none'
-  })) pill.setAttribute(key, value);
-  pill.textContent = '이미지 만들기';
-  paragraphs[0].prepend(pill, document.createTextNode('\u00a0'));
+  if (withPill) {
+    const pill = document.createElement('span');
+    for (const [key, value] of Object.entries({
+      contenteditable:'false', 'data-inline-selection-pill':'', 'data-id':'picture_v2',
+      'data-symbol':'ecosystemMention', 'data-keyword':'이미지 만들기',
+      'data-system-hint-type':'picture_v2',
+      class:'inline-flex items-center gap-1 rounded-md bg-token-main-surface-secondary px-2 py-0.5 text-sm font-medium select-none'
+    })) pill.setAttribute(key, value);
+    pill.textContent = '이미지 만들기';
+    paragraphs[0].prepend(pill, document.createTextNode('\u00a0'));
+  }
   el.replaceChildren(...paragraphs);
   el.dispatchEvent(new InputEvent('input', {bubbles:true, inputType:'insertHTML'}));
   el.dispatchEvent(new Event('change', {bubbles:true}));
-  // Allow ProseMirror/React to reconcile before accepting the tool selection.
-  await new Promise(resolve=>setTimeout(resolve,250));
+};
+const selectImageTool = async () => {
+  if (imageModeActive()) return;
+  const plus = plusButton();
+  if (!enabled(plus)) throw new Error('image-tool-menu-unavailable');
+  if (plus.getAttribute('aria-expanded') !== 'true') plus.click();
+  const deadline = Date.now() + 4000;
+  while (Date.now() < deadline) {
+    // Only actionable tool-menu entries. Never click sidebar image navigation,
+    // conversation text, or a suggestion that might submit its own prompt.
+    const items = Array.from(document.querySelectorAll('button[data-list-navigation-item="true"],[role="menu"] [role="menuitem"]'));
+    const item = items.find(el => enabled(el) && el.getClientRects().length &&
+      [el, ...el.querySelectorAll('span')].some(label => /^(이미지 생성|이미지 만들기|Create image|Create images|Image generation)$/i.test(label.textContent.trim())));
+    if (item) { item.click(); break; }
+    await delay(100);
+  }
+  for (let i = 0; i < 20; i++) {
+    if (imageModeActive()) { await delay(250); if (imageModeActive()) return; }
+    await delay(100);
+  }
+  throw new Error('image-mode-not-applied');
+};
+if (operation === 'composeImage') {
+  if (typeof payload.prompt !== 'string' || !payload.prompt.trim()) throw new Error('image-prompt-empty');
+  // September 2026 markdown composer rejects the legacy inline pill schema.
+  // Keep direct injection for older editors; use the actual tool control on new ones.
+  const modern = !!composer()?.hasAttribute('data-composer-markdown');
+  writePrompt(payload.prompt, !modern);
+  await delay(300);
+  if (!imageModeActive()) {
+    // Remove any rejected pill's leftover label before using the native tool.
+    writePrompt(payload.prompt, false);
+    await delay(150);
+    await selectImageTool();
+  }
   if (!imageModeActive()) throw new Error('image-mode-not-applied');
   return JSON.stringify({ok:true});
 }
@@ -101,29 +139,51 @@ if (operation === 'generationMetadata') {
   }
   return JSON.stringify({images:Array.from(images.values())});
 }
+// Current galleries render one large preview and the remaining originals in
+// thumbnail buttons. Identify both by their explicit gallery controls, not size.
+const generatedImageIdentity = img => {
+  if (img.closest('form,[data-message-author-role="user"],[data-user-message-bubble],[data-chatgpt-search-unit-key$=":user"]')) return null;
+  const message = img.closest('[data-message-id],[data-chatgpt-search-message-ids]');
+  const responseID = (message?.getAttribute('data-message-id') || message?.getAttribute('data-chatgpt-search-message-ids') || '').trim().split(/\s+/)[0];
+  const preview = img.closest('[data-testid="generated-image-preview"]');
+  const thumbnail = img.closest('[role="group"][aria-label="생성된 이미지"] button,[role="group"][aria-label="Generated images"] button');
+  const control = preview || thumbnail;
+  if (!responseID || !control) return null;
+  const numbered = control.getAttribute('aria-label')?.match(/^(?:생성된 이미지|(?:Show )?Generated image)\s+(\d+)(?: 표시)?$/i);
+  const ordinal = numbered ? Number(numbered[1]) - 1 : preview ? Array.from(message.querySelectorAll('[data-testid="generated-image-preview"] img')).indexOf(img) : -1;
+  return ordinal >= 0 ? {responseID, fileID:`generated-${responseID}-${ordinal}`} : null;
+};
 if (operation === 'snapshot') {
-  const assistants = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
-  const users = Array.from(document.querySelectorAll('[data-message-author-role="user"]'));
+  const userSelector = '[data-message-author-role="user"],[data-user-message-bubble],[data-chatgpt-search-unit-key$=":user"]';
+  const assistants = Array.from(document.querySelectorAll('[data-message-author-role="assistant"],main [data-chatgpt-search-message-ids]')).filter(el => !el.closest(userSelector));
+  const users = Array.from(document.querySelectorAll('[data-message-author-role="user"],[data-user-message-bubble]'));
   // Current ChatGPT image cards may have no assistant role wrapper. Require an
   // explicit generated-image label in that layout; never treat arbitrary main images as outputs.
   const candidates = Array.from(document.querySelectorAll('main img')).filter(img =>
-    !img.closest('[data-message-author-role="user"],form') &&
-    (img.closest('[data-message-author-role="assistant"]') || /generated image|생성된 이미지|生成的图片/i.test(img.alt || '')));
-  const allImages = candidates.map(img => ({
-    url: img.currentSrc || img.src, fileID: fileID(img.currentSrc || img.src),
-    responseID: img.closest('[data-message-id]')?.dataset.messageId || `image-${fileID(img.currentSrc || img.src)}`,
-    width: img.naturalWidth, height: img.naturalHeight, complete: img.complete
-  })).filter(img => /estuary|oaiusercontent|backend-api\/[^?]*content/.test(img.url));
+    !img.closest(userSelector + ',form') &&
+    (generatedImageIdentity(img) || img.closest('[data-message-author-role="assistant"]') || /generated image|생성된 이미지|生成的图片/i.test(img.alt || '')));
+  const allImages = candidates.map(img => {
+    const url = img.currentSrc || img.src;
+    const identity = generatedImageIdentity(img);
+    const responseID = identity?.responseID || img.closest('[data-message-id]')?.dataset.messageId;
+    // Blob URLs change after reloading; message identity survives recovery.
+    const blob = url.startsWith('blob:https://chatgpt.com/');
+    const id = blob && identity ? identity.fileID : fileID(url);
+    return {url, fileID:id, responseID:responseID || `image-${id}`,
+      width:img.naturalWidth, height:img.naturalHeight, complete:img.complete,
+      supported:blob ? !!identity : /estuary|oaiusercontent|backend-api\/[^?]*content/.test(url)};
+  }).filter(img => img.supported);
   const images = Array.from(new Map(allImages.map(image => [image.fileID, image])).values());
   const alerts = Array.from(document.querySelectorAll('[role="alert"]')).map(el => el.innerText).join('\n');
   const lastAssistant = assistants.at(-1);
-  const reply = lastAssistant ? Array.from(lastAssistant.querySelectorAll('.markdown,[data-message-content]')).filter(el=>!el.parentElement?.closest('.markdown,[data-message-content]')).map(el=>el.innerText).join('\n\n').trim() : '';
+  const replySelector = '.markdown,[data-message-content],[data-markdown-text-style="assistant-message"]';
+  const reply = lastAssistant ? Array.from(lastAssistant.querySelectorAll(replySelector)).filter(el=>!el.parentElement?.closest(replySelector)).map(el=>el.innerText).join('\n\n').trim() : '';
   const serviceError = /something went wrong|error generating|image generation failed|이미지 생성.*(실패|오류)|문제가 발생/i.test(alerts) ? alerts : '';
   const limitation = /you.ve reached.*limit|too many requests|rate limit|사용 한도에 도달|생성 한도에 도달|너무 많은 요청/i.test(alerts + '\n' + reply);
   const login = !!document.querySelector('[data-testid="login-button"]');
   return JSON.stringify({
-    path: location.pathname, ready: !!composer() && !login, login,
-    generating: !!document.querySelector('button[data-testid="stop-button"],button[aria-label*="Stop streaming"],button[aria-label*="생성 중지"],button[aria-label*="응답 중지"],button[aria-label*="Stop"],[data-is-streaming="true"]'),
+    path: location.pathname, ready: !!composer() && !login && (!composer().hasAttribute('data-composer-markdown') || (enabled(plusButton()) && enabled(reasoningPill()))), login,
+    generating: !!document.querySelector('button[data-testid="stop-button"],button[aria-label*="Stop streaming"],button[aria-label*="생성 중지"],button[aria-label*="응답 중지"],button[aria-label*="Stop"],form button[aria-label="중지"],form button[aria-label="응답 중지"],[data-is-streaming="true"]'),
     assistantCount: Math.max(assistants.length, images.length), userCount: users.length, reply: reply.slice(0, 60000), serviceError,
     composerEmpty: !(composer()?.innerText || composer()?.value || '').trim(),
     sendEnabled: enabled(send()), limitation, images,
@@ -143,7 +203,7 @@ if (operation === 'type') {
   return JSON.stringify({ok:true});
 }
 if (operation === 'attach') {
-  const input = document.querySelector('input[type="file"]');
+  const input = Array.from((composerForm() || document).querySelectorAll('input[type="file"]')).find(el => enabled(el) && /image\//.test(el.accept)) || Array.from((composerForm() || document).querySelectorAll('input[type="file"]')).find(enabled);
   if (!input) throw new Error('file-input-missing');
   input.value = ''; input.click(); return JSON.stringify({ok:true});
 }
@@ -162,7 +222,8 @@ if (operation === 'submit') {
 }
 if (operation === 'download') {
   const url = new URL(payload.url, location.href);
-  if (url.protocol !== 'https:' || !(url.hostname === 'chatgpt.com' || url.hostname.endsWith('.oaiusercontent.com') || url.hostname.endsWith('.oaidusercontent.com'))) throw new Error('unexpected-image-origin');
+  const generatedBlob = url.protocol === 'blob:' && url.origin === location.origin && Array.from(document.querySelectorAll('main img')).some(img => (img.currentSrc || img.src) === url.href && generatedImageIdentity(img));
+  if (!generatedBlob && (url.protocol !== 'https:' || !(url.hostname === 'chatgpt.com' || url.hostname.endsWith('.oaiusercontent.com') || url.hostname.endsWith('.oaidusercontent.com')))) throw new Error('unexpected-image-origin');
   const response = await fetch(url.href, {credentials:'include'});
   if (!response.ok) throw new Error(`download-http-${response.status}`);
   const blob = await response.blob();

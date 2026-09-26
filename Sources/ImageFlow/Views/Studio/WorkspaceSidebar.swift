@@ -19,7 +19,7 @@ struct WorkspaceSidebar: View {
                             projectCover(project)
                             Text(project.name).font(StudioTypography.item).lineLimit(1)
                             Spacer(minLength: 2)
-                            let count = store.library.assets.filter { $0.projectID == project.id && !$0.isReference && !(store.library.hiddenAssetIDs ?? []).contains($0.id) }.count
+                            let count = store.library.assets.filter { ($0.projectID == project.id || project.referenceIDs.contains($0.id)) && !(store.library.hiddenAssetIDs ?? []).contains($0.id) }.count
                             Text("\(count)").font(StudioTypography.metadata).monospacedDigit().foregroundStyle(.secondary)
                         }.padding(.vertical, 4).tag(project.id)
                             .help(project.name)
@@ -46,7 +46,7 @@ struct WorkspaceSidebar: View {
         }
     }
     @ViewBuilder private func projectCover(_ project: Project) -> some View {
-        if let asset = store.library.assets.last(where: { $0.projectID == project.id && !$0.isReference && !(store.library.hiddenAssetIDs ?? []).contains($0.id) }) {
+        if let asset = store.library.assets.last(where: { ($0.projectID == project.id || project.referenceIDs.contains($0.id)) && !(store.library.hiddenAssetIDs ?? []).contains($0.id) }) {
             AssetThumbnail(url: store.vault.thumbnail(asset), fit: false).frame(width: 28, height: 28).clipped().clipShape(RoundedRectangle(cornerRadius: 5)).accessibilityHidden(true)
         } else { Image(systemName: "folder").font(.system(size: 17)).foregroundStyle(.secondary).frame(width: 28, height: 28) }
     }

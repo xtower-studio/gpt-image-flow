@@ -118,7 +118,14 @@ struct WorkflowNodeCard: View {
         }
     }
     @ViewBuilder private func resultContent(_ job: Job) -> some View {
-        if job.state.isRunning || job.state == .queued { GenerationActivityView(job: job, compact: true) }
+        if job.state.isRunning || job.state == .queued {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                ForEach(ProjectImageSlot.make(assets: job.results, jobs: [job])) { slot in
+                    if let asset = slot.asset { AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 100) }
+                    else { Button { openJob(job) } label: { GenerationPlaceholder(job: job, ordinal: slot.ordinal, compact: true).frame(height: 100) }.buttonStyle(.plain) }
+                }
+            }
+        }
         HStack {
             Text(job.state.label).font(StudioTypography.control).foregroundStyle(job.state.needsAttention ? Color.orange : .secondary)
             Spacer()
@@ -130,7 +137,7 @@ struct WorkflowNodeCard: View {
         if let response = job.responseText ?? job.error, job.state.needsAttention {
             Text(response).font(StudioTypography.supporting).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
         }
-        if !job.results.isEmpty {
+        if !job.results.isEmpty && !job.state.isRunning && job.state != .queued {
             let chosen = job.results.first { $0.id == node.selectedAssetID } ?? job.results.first!
             AssetThumbnail(url: store.vault.thumbnail(chosen)).frame(height: 112).frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 8)).onTapGesture(count: 2) { preview(chosen) }

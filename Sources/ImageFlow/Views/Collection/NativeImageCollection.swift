@@ -6,8 +6,12 @@ import FlowCore
 /// keyboard navigation, scrolling, accessibility and file dragging in one responder.
 struct NativeImageCollection: NSViewRepresentable {
     let assets: [Asset]
+    let jobs: [Job]
+    var slots: [ProjectImageSlot] { ProjectImageSlot.make(assets: assets, jobs: jobs) }
+    var openJob: (Job) -> Void
     let store: WorkspaceStore
     let cardSize: Double
+    @Environment(\.scenePhase) private var scenePhase
     @Binding var selection: Set<UUID>
     var preview: ([Asset]) -> Void
     var edit: (Asset) -> Void
@@ -27,6 +31,7 @@ struct NativeImageCollection: NSViewRepresentable {
         // Set the modern layout before registering: switching from legacy layout clears registrations.
         collection.collectionViewLayout = NSCollectionViewFlowLayout()
         collection.register(ImageCollectionItem.self, forItemWithIdentifier: ImageCollectionItem.identifier)
+        collection.register(GenerationCollectionItem.self, forItemWithIdentifier: GenerationCollectionItem.identifier)
         collection.setDraggingSourceOperationMask(.copy, forLocal: true)
         collection.setDraggingSourceOperationMask(.copy, forLocal: false)
         collection.setAccessibilityLabel("프로젝트 이미지")
@@ -41,13 +46,14 @@ struct NativeImageCollection: NSViewRepresentable {
     }
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         let coordinator = context.coordinator
-        let changed = coordinator.parent.assets != assets
-        coordinator.parent = self
+        let nextSlots = slots
+        let changed = coordinator.slots != nextSlots || coordinator.phase != scenePhase
+        coordinator.parent = self; coordinator.slots = nextSlots; coordinator.phase = scenePhase
         guard let collection = scroll.documentView as? ImageCollectionView else { return }
         configure(collection, coordinator: coordinator)
         coordinator.applying = true
         if changed { collection.reloadData() }
-        let indexes = Set(assets.enumerated().filter { selection.contains($0.element.id) }.map { IndexPath(item: $0.offset, section: 0) })
+        let indexes = Set(nextSlots.enumerated().filter { $0.element.asset.map { selection.contains($0.id) } ?? false }.map { IndexPath(item: $0.offset, section: 0) })
         let selectionChanged = collection.selectionIndexPaths != indexes
         if selectionChanged { collection.selectionIndexPaths = indexes }
         if changed || selectionChanged {
@@ -64,33 +70,43 @@ struct NativeImageCollection: NSViewRepresentable {
         var parent: NativeImageCollection
         weak var collection: ImageCollectionView?
         var applying = false
-        init(_ parent: NativeImageCollection) { self.parent = parent }
-        func collectionView(_ collectionView: NSCollectionView, numberOfItemsInSection section: Int) -> Int { parent.assets.count }
+        var slots: [ProjectImageSlot]
+        var phase: ScenePhase
+        init(_ parent: NativeImageCollection) { self.parent = parent; slots = parent.slots; phase = parent.scenePhase }
+        func collectionView(_ collectionView: NSCollectionView, numberOfItemsInSection section: Int) -> Int { slots.count }
         func collectionView(_ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {
+            let slot = slots[indexPath.item]
+            if slot.asset == nil, let job = slot.job {
+                let item = collectionView.makeItem(withIdentifier: GenerationCollectionItem.identifier, for: indexPath) as! GenerationCollectionItem
+                item.render(job: job, ordinal: slot.ordinal, phase: phase) { [weak self] in self?.parent.openJob(job) }
+                return item
+            }
             let item = collectionView.makeItem(withIdentifier: ImageCollectionItem.identifier, for: indexPath) as! ImageCollectionItem
             configure(item, at: indexPath); return item
         }
         func configure(_ item: ImageCollectionItem, at path: IndexPath) {
-            guard parent.assets.indices.contains(path.item) else { return }
-            let asset = parent.assets[path.item]
+            guard slots.indices.contains(path.item), let asset = slots[path.item].asset else { return }
             item.select = { [weak self] in
-                guard let self, let collection = self.collection, let index = self.parent.assets.firstIndex(where: { $0.id == asset.id }) else { return }
+                guard let self, let collection = self.collection, let index = self.slots.firstIndex(where: { $0.asset?.id == asset.id }) else { return }
                 collection.selectionIndexPaths = [IndexPath(item: index, section: 0)]
                 collection.window?.makeFirstResponder(collection); self.changed()
             }
             item.render(asset: asset, store: parent.store, selected: collection?.selectionIndexPaths.contains(path) == true,
                         edit: { [weak self] in self?.parent.edit(asset) }, attach: { [weak self] in self?.parent.attach(asset) })
         }
+        func collectionView(_ collectionView: NSCollectionView, shouldSelectItemsAt indexPaths: Set<IndexPath>) -> Set<IndexPath> {
+            Set(indexPaths.filter { slots.indices.contains($0.item) && slots[$0.item].asset != nil })
+        }
         func collectionView(_ collectionView: NSCollectionView, didSelectItemsAt indexPaths: Set<IndexPath>) { changed() }
         func collectionView(_ collectionView: NSCollectionView, didDeselectItemsAt indexPaths: Set<IndexPath>) { changed() }
         func changed() {
             guard !applying, let collection else { return }
-            parent.selection = Set(collection.selectionIndexPaths.compactMap { parent.assets.indices.contains($0.item) ? parent.assets[$0.item].id : nil })
+            parent.selection = Set(collection.selectionIndexPaths.compactMap { slots.indices.contains($0.item) ? slots[$0.item].asset?.id : nil })
             for item in collection.visibleItems() { if let item = item as? ImageCollectionItem, let path = collection.indexPath(for: item) { configure(item, at: path) } }
         }
         func collectionView(_ collectionView: NSCollectionView, pasteboardWriterForItemAt indexPath: IndexPath) -> (any NSPasteboardWriting)? {
-            guard parent.assets.indices.contains(indexPath.item) else { return nil }
-            return parent.store.vault.original(parent.assets[indexPath.item]) as NSURL
+            guard slots.indices.contains(indexPath.item), let asset = slots[indexPath.item].asset else { return nil }
+            return parent.store.vault.original(asset) as NSURL
         }
         var selected: [Asset] { parent.assets.filter { parent.selection.contains($0.id) } }
         func perform(_ action: ImageCollectionView.Action) {
@@ -107,6 +123,7 @@ struct NativeImageCollection: NSViewRepresentable {
         func menu(_ event: NSEvent) -> NSMenu? {
             guard let collection else { return nil }
             let point = collection.convert(event.locationInWindow, from: nil)
+            if let path = collection.indexPathForItem(at: point), slots[path.item].asset == nil { return nil }
             if let path = collection.indexPathForItem(at: point), !collection.selectionIndexPaths.contains(path) { collection.selectionIndexPaths = [path]; changed() }
             guard !selected.isEmpty else { return nil }
             let menu = NSMenu()
@@ -205,6 +222,9 @@ struct CollectionImageCell: View {
             }.aspectRatio(1, contentMode: .fit)
                 .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
                 .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(selected ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: selected ? 2 : 1) }
+                .overlay(alignment: .topLeading) {
+                    if asset.isReference { Label("참조", systemImage: "paperclip").font(StudioTypography.metadata).padding(6).background(.regularMaterial, in: Capsule()).padding(8) }
+                }
                 .overlay(alignment: .topTrailing) {
                     if asset.isFavorite { Image(systemName: "star.fill").font(.system(size: 11, weight: .semibold)).foregroundStyle(.white).padding(7).background(.black.opacity(0.65), in: Circle()).padding(8) }
                 }

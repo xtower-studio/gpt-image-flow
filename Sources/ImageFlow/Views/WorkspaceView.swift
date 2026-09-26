@@ -34,12 +34,13 @@ struct WorkspaceView: View {
     var selectedAssets: [Asset] { assets.filter { selection.contains($0.id) } }
     var allAssets: [Asset] {
         let order = Dictionary(uniqueKeysWithValues: store.jobs.enumerated().map { ($0.element.id, $0.offset) })
-        return store.library.assets.filter { $0.projectID == project?.id && !$0.isReference && !(store.library.hiddenAssetIDs ?? []).contains($0.id) }.sorted {
+        return store.library.assets.filter { ($0.projectID == project?.id || project?.referenceIDs.contains($0.id) == true) && !(store.library.hiddenAssetIDs ?? []).contains($0.id) }.sorted {
             let a = $0.jobID.flatMap { order[$0] } ?? Int.max, b = $1.jobID.flatMap { order[$0] } ?? Int.max
             return a == b ? $0.createdAt < $1.createdAt : a < b
         }
     }
     var assets: [Asset] { allAssets.filter(matches) }
+    var collectionJobs: [Job] { favoritesOnly ? [] : projectJobs.filter { query.isEmpty || $0.prompt.localizedCaseInsensitiveContains(query) || $0.results.contains(where: matches) } }
     var projectJobs: [Job] { store.jobs.filter { $0.projectID == project?.id && $0.state != .cancelled } }
     var body: some View {
         NavigationSplitView {
@@ -119,22 +120,12 @@ struct WorkspaceView: View {
     }
     @ViewBuilder private func board(_ project: Project) -> some View {
         VStack(spacing: 0) {
-            if boardMode != "canvas" {
-                let running = projectJobs.filter { $0.state.isRunning || $0.state == .queued }
-                if !running.isEmpty {
-                    HStack(spacing: 12) {
-                        ForEach(Array(running.prefix(3))) { job in
-                            Button { openJob(job) } label: { GenerationActivityView(job: job, showMark: !assets.isEmpty) }.buttonStyle(.plain)
-                        }
-                    }.padding(20)
-                }
-            }
             if boardMode == "canvas" {
                 WorkflowCanvasView(project: project, assets: canvasAssets(project), jobs: projectJobs, selection: $selection, preview: { comparison = [$0] }, edit: beginEdit, openJob: openJob).id(project.id)
-            } else if assets.isEmpty {
+            } else if ProjectImageSlot.make(assets: assets, jobs: collectionJobs).isEmpty {
                 EmptyStudioView(filtered: favoritesOnly || !query.isEmpty, running: projectJobs.contains { $0.state.isRunning || $0.state == .queued }, create: startCreate, importImages: { store.selectImages(projectID: project.id) }, clear: { query = ""; favoritesOnly = false })
             } else {
-                NativeImageCollection(assets: assets, store: store, cardSize: cardSize, selection: $selection, preview: { comparison = Array($0.prefix(4)) }, edit: beginEdit, inspect: { panel = .details; panelVisible = true }, attach: { store.attach($0, to: project.id); panel = .create; panelVisible = true }, rename: renameAsset, hide: hideAssets)
+                NativeImageCollection(assets: assets, jobs: collectionJobs, openJob: openJob, store: store, cardSize: cardSize, selection: $selection, preview: { comparison = Array($0.prefix(4)) }, edit: beginEdit, inspect: { panel = .details; panelVisible = true }, attach: { store.attach($0, to: project.id); panel = .create; panelVisible = true }, rename: renameAsset, hide: hideAssets)
             }
         }.frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity).background(StudioPalette.stage)
     }
@@ -143,7 +134,11 @@ struct WorkspaceView: View {
         let attention = projectJobs.filter { job in job.showsAttention && !store.jobs.contains { $0.continuationOf == job.id && $0.state != .cancelled } }
         if !active.isEmpty || !attention.isEmpty || favoritesOnly {
             HStack(spacing: 8) {
-                if !active.isEmpty { ProgressView().controlSize(.small); Text("\(active.count)개 작업 진행 중").fontWeight(.medium) }
+                if !active.isEmpty {
+                    let remaining = active.reduce(0) { $0 + max(0, $1.expectedImageCount - $1.results.count) }
+                    Image(systemName: store.journal.paused ? "pause.circle" : "sparkles").foregroundStyle(.secondary)
+                    Text((remaining > 0 ? "\(remaining)장 " + (store.journal.paused ? "대기 중" : "생성 중") : "결과 정리 중") + " · \(active.count)개 요청").fontWeight(.medium)
+                }
                 else if favoritesOnly { Label("후보 \(assets.count)개", systemImage: "star.fill") }
                 else {
                     let failures = attention.filter { $0.state != .responded }.count

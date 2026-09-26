@@ -9,7 +9,19 @@ extension FlowAppDelegate {
               let operation = command["operation"], let store else { return }
         try? FileManager.default.removeItem(at: url)
         do {
-            if operation == "studioV11Smoke" {
+            if operation == "projectSlotsQA" {
+                guard !store.library.projects.contains(where: { $0.name == "프로젝트 이미지 검증" }), let reference = store.library.assets.first(where: { $0.id == UUID(uuidString: "D1A84191-D395-43FD-9D34-7AA9763AE45D") }) else { return }
+                var project = Project(name: "프로젝트 이미지 검증"); project.prompt = "Four distinct cobalt ceramic teapot designs on warm ivory backgrounds, product photography."
+                project.generationMode = .automatic
+                store.library.projects.append(project)
+                let copy = try await store.vault.ingest(url: store.vault.original(reference), projectID: project.id, title: "첨부 이미지")
+                store.upsert(copy); project.referenceIDs = [copy.id]; store.updateProject(project)
+                store.journal.paused = true; store.journal.pauseReason = "화면 검증 중"
+                try store.enqueue(project: project); store.requestedProjectID = project.id; store.flush()
+            } else if operation == "resumeProjectSlotsQA" {
+                guard store.jobs.filter({ $0.state == .queued }).allSatisfy({ store.project($0.projectID)?.name == "프로젝트 이미지 검증" }) else { return }
+                store.journal.paused = false; store.journal.pauseReason = nil; store.flush()
+            } else if operation == "studioV11Smoke" {
                 guard !store.library.projects.contains(where: { $0.name == "v0.11 검증 · 보관함" }) else { throw FlowError.message("이미 요청한 검증입니다.") }
                 var project = Project(name: "v0.11 검증 · 보관함")
                 project.prompt = "A single cobalt ceramic teapot on a warm ivory background, quiet editorial product photography."

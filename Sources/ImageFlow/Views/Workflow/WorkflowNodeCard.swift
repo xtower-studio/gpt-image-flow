@@ -118,8 +118,8 @@ struct WorkflowNodeCard: View {
         }
     }
     @ViewBuilder private func resultContent(_ job: Job) -> some View {
+        if job.state.isRunning || job.state == .queued { GenerationActivityView(job: job, compact: true) }
         HStack {
-            if job.state.isRunning || job.state == .queued { ProgressView().controlSize(.mini) }
             Text(job.state.label).font(StudioTypography.control).foregroundStyle(job.state.needsAttention ? Color.orange : .secondary)
             Spacer()
             Button { openJob(job) } label: { Image(systemName: "clock.arrow.circlepath") }.buttonStyle(.borderless).help("이 실행의 기록 보기")
@@ -179,6 +179,7 @@ struct WorkflowNodeSettings: View {
                 Stepper("이미지 \(settings.wrappedValue.api.count)장", value: settings.api.count, in: 1...10)
                 Button("모든 API 옵션…") { advanced = true }
                 Button(store.apiConnection.ready ? "API 연결 관리…" : "OpenAI API 연결…") { connection = true }
+                APICostView(options: settings.wrappedValue.api)
                 APIBillingNotice()
             } else {
                 Picker("화면 비율", selection: settings.aspect) { ForEach(["자동", "1:1", "3:2", "2:3", "16:9", "9:16"], id: \.self) { Text($0).tag($0) } }

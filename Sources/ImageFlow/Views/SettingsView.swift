@@ -17,11 +17,21 @@ struct SettingsView: View {
                 Toggle("절전 모드", isOn: Binding(get: { engine.eco }, set: { engine.eco = $0 }))
                 Text("절전 모드에서는 한 번에 하나씩 생성합니다. 기본 모드는 최대 3개를 실행합니다.").font(StudioTypography.supporting).foregroundStyle(.secondary)
             }
+            Section("저장 공간") {
+                Text(store.root.path.replacingOccurrences(of: NSHomeDirectory(), with: "~")).font(StudioTypography.supporting).textSelection(.enabled)
+                HStack {
+                    Button("저장 폴더 변경…") { store.selectStorageFolder(openExisting: false) }
+                    Button("기존 보관함 열기…") { store.selectStorageFolder(openExisting: true) }
+                }.disabled(!store.canChangeStorage)
+                if store.changingStorage { ProgressView("원본과 작업 기록 복사 중…") }
+                Text("원본·첨부·생성 정보와 프로젝트를 함께 보관합니다. 권장 위치: ~/Pictures/Image Flow").font(StudioTypography.supporting).foregroundStyle(.secondary)
+            }
             Section("내 작업") {
                 Button("숨긴 이미지 모두 복원", action: store.restoreAllHidden).disabled((store.library.hiddenAssetIDs ?? []).isEmpty)
+                Button("시작 안내 다시 보기") { store.showOnboarding = true }
                 Button("저장 폴더 열기") { NSWorkspace.shared.open(store.root) }
                 Text("요청과 참조는 생성할 때 선택한 ChatGPT 또는 OpenAI API로 전송됩니다. 원본과 작업 이력은 이 Mac에 저장됩니다.").font(StudioTypography.supporting).foregroundStyle(.secondary)
             }
-        }.formStyle(.grouped).frame(width: 480, height: 510).sheet(isPresented: $showAPIConnection) { APIConnectionView() }
+        }.formStyle(.grouped).frame(width: 480, height: 710).sheet(isPresented: $showAPIConnection) { APIConnectionView() }
     }
 }

@@ -22,6 +22,10 @@ struct JobResponseView: View {
                     Spacer()
                     if let url = job.conversationURL { Link(destination: url) { Image(systemName: "arrow.up.right.square") }.help("ChatGPT 대화 열기") }
                 }
+                if job.imageToolVerifiedAt != nil { Label("이미지 생성 도구 적용 확인", systemImage: "checkmark.seal").font(StudioTypography.supporting).foregroundStyle(.secondary) }
+                if job.apiOptions == nil, job.state.isRunning {
+                    Button("실제 ChatGPT 작업 화면 보기") { engine.workers[job.id]?.host.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true) }
+                }
                 DisclosureGroup("보낸 프롬프트") { Text(job.prompt).font(StudioTypography.body).textSelection(.enabled).padding(.top, 8) }.padding(14).panelSurface()
                 if let options = job.apiOptions {
                     Text(ImageAPIModel.label(options.model) + " · OpenAI API").font(StudioTypography.control)
@@ -34,7 +38,7 @@ struct JobResponseView: View {
                 if !job.results.isEmpty {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))]) { ForEach(job.results) { asset in AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 110) } }
                 }
-                if job.state.isRunning || job.state == .queued { Text("응답을 기다리고 있습니다. 이 화면에서 계속 확인할 수 있어요.").font(StudioTypography.body).foregroundStyle(.secondary) }
+                if job.state.isRunning || job.state == .queued { GenerationActivityView(job: job) }
                 if let response = job.responseText { Text(response).font(StudioTypography.body).lineSpacing(StudioTypography.lineSpacing).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }
                 if let error = job.error { Text(error).font(StudioTypography.body).foregroundStyle(.secondary).textSelection(.enabled) }
                 if job.state == .queued {

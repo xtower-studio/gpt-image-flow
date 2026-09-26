@@ -45,13 +45,12 @@ public actor AssetVault {
         CGImageDestinationAddImage(destination, small, nil)
         guard CGImageDestinationFinalize(destination) else { throw FlowError.message("미리보기를 저장할 수 없습니다.") }
         try (thumbnailData as Data).write(to: thumbnail(asset), options: .atomic)
-        if jobID != nil {
+        do {
             try JSONEncoder().encode(asset).write(to: root.appendingPathComponent("Receipts/\(id).json"), options: .atomic)
         }
         return asset
     }
     public func updateReceipt(_ asset: Asset) throws {
-        guard asset.jobID != nil else { return }
         try JSONEncoder().encode(asset).write(to: root.appendingPathComponent("Receipts/\(asset.id).json"), options: .atomic)
     }
     public func receipts() throws -> [Asset] {
@@ -63,6 +62,24 @@ public actor AssetVault {
                 guard let bytes = try? Data(contentsOf: original(asset)), Self.hash(bytes) == asset.digest else { return nil }
                 return asset
             }
+    }
+    public func rebuildMissingThumbnails(_ assets: [Asset]) throws {
+        let fm = FileManager.default
+        try fm.createDirectory(at: root.appendingPathComponent("Thumbnails"), withIntermediateDirectories: true)
+        for asset in assets where !fm.fileExists(atPath: thumbnail(asset).path) {
+            let url = try PortableLibrary.original(asset, in: root)
+            guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+                  let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                    kCGImageSourceCreateThumbnailFromImageAlways: true,
+                    kCGImageSourceCreateThumbnailWithTransform: true,
+                    kCGImageSourceThumbnailMaxPixelSize: 640
+                  ] as CFDictionary) else { throw FlowError.message("미리보기를 복원할 수 없습니다: \(asset.title)") }
+            let data = NSMutableData()
+            guard let output = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil) else { throw FlowError.message("미리보기 저장 실패") }
+            CGImageDestinationAddImage(output, image, nil)
+            guard CGImageDestinationFinalize(output) else { throw FlowError.message("미리보기 저장 실패") }
+            try (data as Data).write(to: thumbnail(asset), options: .atomic)
+        }
     }
     public static func hash(_ bytes: Data) -> String { SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined() }
 

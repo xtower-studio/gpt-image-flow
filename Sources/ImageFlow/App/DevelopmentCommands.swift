@@ -9,7 +9,23 @@ extension FlowAppDelegate {
               let operation = command["operation"], let store else { return }
         try? FileManager.default.removeItem(at: url)
         do {
-            if operation == "verifyComposerConcurrency" {
+            if operation == "studioV11Smoke" {
+                guard !store.library.projects.contains(where: { $0.name == "v0.11 검증 · 보관함" }) else { throw FlowError.message("이미 요청한 검증입니다.") }
+                var project = Project(name: "v0.11 검증 · 보관함")
+                project.prompt = "A single cobalt ceramic teapot on a warm ivory background, quiet editorial product photography."
+                project.generationMode = .instant
+                store.library.projects.append(project)
+                try store.enqueue(project: project)
+                store.requestedProjectID = project.id
+                store.journal.paused = false; store.journal.pauseReason = nil; store.flush()
+            } else if operation == "verifyPortableLibrary" {
+                let root = store.root
+                let archive = try await Task.detached { let value = try PortableLibrary.load(from: root); try value.verifyFiles(in: root); return value }.value
+                let proof: [String: Any] = ["folder": root.path, "assets": archive.library.assets.count, "references": archive.library.assets.filter(\.isReference).count, "projects": archive.library.projects.count, "recipes": archive.library.recipes?.count ?? 0, "jobs": archive.journal.jobs.count, "hashesVerified": true]
+                try JSONSerialization.data(withJSONObject: proof, options: .prettyPrinted).write(to: directory.appendingPathComponent("portable-proof.json"))
+            } else if operation == "captureImageToolProof" {
+                try await captureImageToolProof(directory: directory)
+            } else if operation == "verifyComposerConcurrency" {
                 try await verifyComposerConcurrency(directory: directory)
             } else if ["workflowSeedQA", "workflowRunQA", "workflowStatus"].contains(operation) {
                 try workflowCommand(operation, directory: directory)

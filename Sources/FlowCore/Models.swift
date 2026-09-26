@@ -99,6 +99,7 @@ public struct Job: Codable, Identifiable, Equatable, Sendable {
     public var executionReasoning: ReasoningLevel { reasoning ?? generationMode?.reasoning ?? .light }
     public var apiRequestID: String?
     public var apiUsageJSON: String?
+    public var imageToolVerifiedAt: Date?
     public var appliedReasoning: Int?
     public var continuationOf: UUID?
     public var responseText: String?

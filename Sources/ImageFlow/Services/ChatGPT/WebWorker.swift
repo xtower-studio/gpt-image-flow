@@ -49,7 +49,7 @@ enum WorkerError: LocalizedError {
         self.slot = slot
         source = try String(contentsOf: Bundle.module.url(forResource: "chatgpt-adapter", withExtension: "js", subdirectory: "Resources")!, encoding: .utf8)
         web = session.makeBrowser()
-        host = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 800), styleMask: [.titled], backing: .buffered, defer: false)
+        host = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 800), styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
         super.init()
         host.title = "Image Flow · 생성 \(slot + 1)"; host.isReleasedWhenClosed = false
         web.frame = host.contentView!.bounds; web.autoresizingMask = [.width, .height]

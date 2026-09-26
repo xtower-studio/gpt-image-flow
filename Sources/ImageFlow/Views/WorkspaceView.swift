@@ -118,7 +118,17 @@ struct WorkspaceView: View {
         }
     }
     @ViewBuilder private func board(_ project: Project) -> some View {
-        Group {
+        VStack(spacing: 0) {
+            if boardMode != "canvas" {
+                let running = projectJobs.filter { $0.state.isRunning || $0.state == .queued }
+                if !running.isEmpty {
+                    HStack(spacing: 12) {
+                        ForEach(Array(running.prefix(3))) { job in
+                            Button { openJob(job) } label: { GenerationActivityView(job: job, showMark: !assets.isEmpty) }.buttonStyle(.plain)
+                        }
+                    }.padding(20)
+                }
+            }
             if boardMode == "canvas" {
                 WorkflowCanvasView(project: project, assets: canvasAssets(project), jobs: projectJobs, selection: $selection, preview: { comparison = [$0] }, edit: beginEdit, openJob: openJob).id(project.id)
             } else if assets.isEmpty {

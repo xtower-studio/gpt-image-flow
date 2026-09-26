@@ -11,8 +11,7 @@ struct ComposerView: View {
     @Environment(GenerationEngine.self) private var engine
     @State private var showAPIConnection = false
     @State private var showVariations = false
-    @State private var recipeName = ""
-    @State private var savingRecipe = false
+    @State private var recipeLibrary = false
     private var current: Project { store.project(project.id) ?? project }
     private var references: [Asset] {
         var ids = current.referenceIDs
@@ -69,6 +68,7 @@ struct ComposerView: View {
                 }.padding(.horizontal, PanelSpacing.inset).padding(.top, PanelSpacing.top).padding(.bottom, PanelSpacing.section)
             }.panelScrollEdges()
             VStack(spacing: 12) {
+                if isAPI { APICostView(options: apiOptions.wrappedValue, requests: count) }
                 HStack {
                     Text("총 \(totalImages)장").font(StudioTypography.section)
                     Spacer()
@@ -88,25 +88,13 @@ struct ComposerView: View {
         }
         .sheet(isPresented: $showAPIConnection) { APIConnectionView() }
         .onChange(of: store.selectedGenerationMode) { _, mode in if mode == .sunburstAPI && !store.apiConnection.ready { showAPIConnection = true } }
-        .alert("레시피 저장", isPresented: $savingRecipe) {
-            TextField("레시피 이름", text: $recipeName)
-            Button("저장") { store.saveRecipe(project: current, name: recipeName) }.disabled(recipeName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            Button("취소", role: .cancel) {}
-        } message: { Text("프롬프트, 참조와 생성 설정을 함께 저장합니다.") }
         .onAppear { showVariations = !current.variations.isEmpty }
     }
     private var recipes: some View {
-        Menu {
-            Button("현재 설정 저장…") { recipeName = current.name; savingRecipe = true }
-            Divider()
-            if (store.library.recipes ?? []).isEmpty { Text("저장한 레시피 없음") }
-            ForEach(store.library.recipes ?? []) { recipe in
-                Menu(recipe.name) {
-                    Button("적용") { store.applyRecipe(recipe, to: project.id) }
-                    Button("삭제") { store.library.recipes?.removeAll { $0.id == recipe.id }; store.flush() }
-                }
-            }
-        } label: { Image(systemName: "bookmark") }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().help("레시피 저장 및 불러오기")
+        Button { recipeLibrary = true } label: { Label("레시피", systemImage: "bookmark") }
+            .buttonStyle(.borderless).font(StudioTypography.supporting).help("프롬프트 레시피 보관함")
+            .accessibilityIdentifier("recipe-library")
+            .sheet(isPresented: $recipeLibrary) { RecipeLibraryView(projectID: project.id) }
     }
     private func generate() {
         var request = current

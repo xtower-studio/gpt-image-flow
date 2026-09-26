@@ -235,6 +235,13 @@ struct WorkflowCanvasView: View {
             Text(runOnly == nil ? "각 단계를 한 번씩 새로 실행합니다. 여러 결과가 나오면 사용할 이미지를 선택할 때까지 연결된 단계가 기다립니다. 실행 중 설정은 고정됩니다." : "앞 단계에서 선택한 결과를 재사용합니다. 다른 단계는 실행하지 않습니다.")
                 .font(StudioTypography.supporting).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             if !paid.isEmpty {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(paid) { node in
+                            VStack(alignment: .leading, spacing: 4) { Text(node.title).font(StudioTypography.metadata).foregroundStyle(.secondary); APICostView(options: node.settings.api) }
+                        }
+                    }
+                }.frame(maxHeight: min(CGFloat(paid.count) * 88, 180))
                 APIBillingNotice()
                 if !store.apiConnection.ready { Button("OpenAI API 연결…") { showAPIConnection = true } }
             }

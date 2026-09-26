@@ -14,7 +14,7 @@ extension WorkspaceStore {
         guard !jobs.contains(where: { $0.conversationID == original.conversationID && ($0.state.isRunning || $0.state == .queued) }) else {
             throw FlowError.message("이 대화의 이전 요청이 끝나면 이어서 보낼 수 있습니다.")
         }
-        var job = Job(batchID: UUID(), projectID: original.projectID, prompt: text + "\nn=\(mode.imagesPerRequest)", label: "후속 요청", referenceIDs: [])
+        var job = Job(batchID: UUID(), projectID: original.projectID, prompt: text + (mode == .instant ? "" : "\nn=\(mode.imagesPerRequest)"), label: "후속 요청", referenceIDs: [])
         job.conversationID = original.conversationID; job.continuationOf = original.id; job.generationMode = mode; job.reasoning = mode.reasoning
         job.requestedImageCount = mode.imagesPerRequest; job.inputPrompt = text
         reserveCanvasPositions(for: [job]); journal.jobs.append(job); try persist()
@@ -24,19 +24,34 @@ extension WorkspaceStore {
         guard !name.isEmpty else { return }
         if library.recipes == nil { library.recipes = [] }
         var settings = project; settings.generationMode = selectedGenerationMode
+        settings.workflow = nil; settings.layout = nil; settings.viewport = nil
         library.recipes?.append(Recipe(name: name, settings: settings)); flush()
         notice = "레시피를 저장했습니다."
     }
-    func applyRecipe(_ recipe: Recipe, to id: UUID) {
+    func applyRecipe(_ recipe: Recipe, to id: UUID, includeSettings: Bool = true, includeReferences: Bool = true) {
         guard var project = project(id) else { return }
+        let before = project, previousMode = selectedGenerationMode
+        let undo = NSApp.keyWindow?.sheetParent?.undoManager ?? NSApp.keyWindow?.undoManager
+        undo?.registerUndo(withTarget: self) { [weak undo] target in target.restoreRecipeProject(before, mode: previousMode, undo: undo) }
+        undo?.setActionName("레시피 적용")
         let settings = recipe.settings
-        project.prompt = settings.prompt; project.variations = settings.variations
-        project.copies = settings.copies; project.aspect = settings.aspect; project.reasoning = settings.reasoning
-        project.background = settings.background; project.imageModel = settings.imageModel
-        project.generationMode = settings.generationMode; project.apiOptions = settings.apiOptions
-        selectedGenerationMode = settings.generationMode ?? .migrated(from: settings.imageModel)
-        project.referenceIDs = settings.referenceIDs.filter { asset($0) != nil }
+        project.prompt = settings.prompt
+        if includeSettings {
+            project.variations = settings.variations
+            project.copies = settings.copies; project.aspect = settings.aspect; project.reasoning = settings.reasoning
+            project.background = settings.background; project.imageModel = settings.imageModel
+            project.generationMode = settings.generationMode; project.apiOptions = settings.apiOptions
+            selectedGenerationMode = settings.generationMode ?? .migrated(from: settings.imageModel)
+        }
+        if includeReferences { project.referenceIDs = settings.referenceIDs.filter { asset($0) != nil } }
         updateProject(project); notice = "\(recipe.name) 레시피를 적용했습니다."
+    }
+    private func restoreRecipeProject(_ project: Project, mode: GenerationMode, undo: UndoManager?) {
+        if let current = self.project(project.id) {
+            let currentMode = selectedGenerationMode
+            undo?.registerUndo(withTarget: self) { [weak undo] target in target.restoreRecipeProject(current, mode: currentMode, undo: undo) }
+        }
+        updateProject(project); selectedGenerationMode = mode
     }
     func hideAssets(_ ids: [UUID]) {
         let undo = NSApp.keyWindow?.undoManager

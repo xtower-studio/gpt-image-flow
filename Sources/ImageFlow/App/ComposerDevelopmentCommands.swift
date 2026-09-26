@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import FlowCore
 
 extension FlowAppDelegate {
@@ -35,4 +35,22 @@ extension FlowAppDelegate {
         for task in tasks { proof.append(await task.value) }
         try JSONEncoder().encode(proof).write(to: directory.appendingPathComponent("composer-concurrency.json"))
     }
+    func captureImageToolProof(directory: URL) async throws {
+        guard let session, engine?.workers.isEmpty == true else { return }
+        let worker = try WebWorker(slot: 0, session: session)
+        defer { worker.close() }
+        var project = Project(name: "Image tool proof"); project.generationMode = .instant
+        project.prompt = "A cobalt ceramic teapot on an ivory background."
+        let job = try JobRules.makeBatch(project: project)[0]
+        _ = try await worker.prepare(job: job, files: [])
+        worker.host.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
+        try await worker.wait(1)
+        let evidence = try await worker.web.evaluateJavaScript("""
+        JSON.stringify({toolButtons:Array.from(document.querySelectorAll('form button')).filter(el=>/이미지.*제거|Remove.*image/i.test(el.getAttribute('aria-label')||'')).map(el=>({label:el.getAttribute('aria-label'),text:el.innerText})),prompt:document.querySelector('#prompt-textarea,div[contenteditable=true].ProseMirror')?.innerText,submitted:false})
+        """) as? String ?? ""
+        try evidence.write(to: directory.appendingPathComponent("image-tool-proof.json"), atomically: true, encoding: .utf8)
+        let image = try await worker.web.takeSnapshot(configuration: nil)
+        if let data = image.tiffRepresentation, let bitmap = NSBitmapImageRep(data: data), let png = bitmap.representation(using: .png, properties: [:]) { try png.write(to: directory.appendingPathComponent("image-tool-proof.png")) }
+    }
+
 }

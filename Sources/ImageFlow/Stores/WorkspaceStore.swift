@@ -9,14 +9,17 @@ import FlowCore
     var storageReady = false
     var restoringAssets = true
     var importing = false
+    var changingStorage = false
+    var showOnboarding = !UserDefaults.standard.bool(forKey: "onboardingCompletedV11")
+    @ObservationIgnored var storageAccess: URL?
     var notice: String?
     var lastHiddenAssets: [UUID] = []
     var requestedJobID: UUID?
     var requestedProjectID: UUID?
     var requestedComparison: [UUID] = []
     var requestedInspectorAsset: UUID?
-    @ObservationIgnored let root: URL
-    @ObservationIgnored let vault: AssetVault
+    var root: URL
+    @ObservationIgnored var vault: AssetVault
     @ObservationIgnored var persistence: LibraryPersistence?
     @ObservationIgnored var draftSave: Task<Void, Never>?
     let apiConnection = APIConnection()
@@ -35,13 +38,24 @@ import FlowCore
 
     init() {
         let args = CommandLine.arguments
-        if let index = args.firstIndex(of: "--data-directory"), args.count > index + 1 { root = URL(fileURLWithPath: args[index + 1]) }
-        else { root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("ImageFlow") }
-        vault = AssetVault(root: root)
+        let initialRoot: URL
+        if let index = args.firstIndex(of: "--data-directory"), args.count > index + 1 { initialRoot = URL(fileURLWithPath: args[index + 1]) }
+        else { initialRoot = Self.initialStorageLocation() }
+        root = initialRoot; vault = AssetVault(root: initialRoot)
         do {
+            if let bookmark = UserDefaults.standard.data(forKey: "libraryFolderBookmark"), !args.contains("--data-directory") {
+                var stale = false
+                if let resolved = try? URL(resolvingBookmarkData: bookmark, options: [.withSecurityScope], relativeTo: nil, bookmarkDataIsStale: &stale), resolved.startAccessingSecurityScopedResource() {
+                    storageAccess = resolved; root = resolved; vault = AssetVault(root: root)
+                }
+            }
+            if UserDefaults.standard.string(forKey: "libraryFolderPath") != nil, !args.contains("--data-directory"), !FileManager.default.fileExists(atPath: root.path) {
+                throw FlowError.message("선택한 저장 폴더를 찾을 수 없습니다. 드라이브를 연결하거나 설정에서 보관함을 다시 열어 주세요.")
+            }
+            let archive = FileManager.default.fileExists(atPath: root.appendingPathComponent(PortableLibrary.filename).path) ? try PortableLibrary.load(from: root) : nil
             let persistence = try LibraryPersistence(root: root)
-            self.persistence = persistence; library = try persistence.load()
-            journal = try QueueJournal.load(journalURL)
+            self.persistence = persistence; library = try archive?.library ?? persistence.load()
+            journal = FileManager.default.fileExists(atPath: journalURL.path) ? try QueueJournal.load(journalURL) : archive?.journal ?? QueueJournal()
             journal.jobs = journal.jobs.map(JobRules.recovered)
             for index in (journal.workflowRuns ?? []).indices where journal.workflowRuns?[index].state == .running {
                 journal.workflowRuns?[index].state = .paused
@@ -56,19 +70,22 @@ import FlowCore
                 defer { restoringAssets = false }
                 do {
                     for asset in try await vault.receipts() {
+                        library.restoreMissingAssets([asset])
                         guard let id = asset.jobID, let index = journal.jobs.firstIndex(where: { $0.id == id }) else { continue }
                         library.restoreMissingAssets([asset])
                         if !journal.jobs[index].results.contains(where: { $0.id == asset.id }) { journal.jobs[index].results.append(asset) }
                     }
+                    try await vault.rebuildMissingThumbnails(library.assets)
                     try persist()
                 } catch { report(error) }
             }
-        } catch { storageReady = false; errorMessage = "저장 공간을 열 수 없습니다. 원본 데이터를 보존했습니다.\n" + error.localizedDescription }
+        } catch { restoringAssets = false; storageReady = false; errorMessage = "저장 공간을 열 수 없습니다. 원본 데이터를 보존했습니다.\n" + error.localizedDescription }
     }
     func persist() throws {
         guard storageReady, let persistence else { throw FlowError.message("저장 공간을 확인해 주세요.") }
         do {
             try journal.save(journalURL)
+            try PortableLibrary(library: library, journal: journal).save(to: root)
             try persistence.save(library)
         } catch { storageReady = false; journal.paused = true; throw error }
     }
@@ -85,6 +102,7 @@ import FlowCore
         library.projects.append(project); flush(); return project.id
     }
     func updateProject(_ project: Project) {
+        guard !changingStorage else { return }
         guard let index = library.projects.firstIndex(where: { $0.id == project.id }) else { return }
         library.projects[index] = project
         draftSave?.cancel()

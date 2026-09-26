@@ -34,7 +34,7 @@ import FlowCore
         activeCount = running.count
         let cooldowns = store.journal.workerAvailableAt ?? [:]
         nextStart = cooldowns.values.filter { $0 > Date() }.min()
-        guard store.storageReady, !store.restoringAssets, !store.journal.paused else { return }
+        guard store.storageReady, !store.restoringAssets, !store.showOnboarding, !store.journal.paused else { return }
         store.advanceWorkflows()
         guard store.storageReady else { return }
         let available = QueueAdmission.slots(limit: eco ? policy.ecoConcurrency : policy.defaultConcurrency,
@@ -118,7 +118,7 @@ import FlowCore
             try store.updateJob(job.id) {
                 $0.state = .submitting; $0.submittedAt = Date()
                 $0.excludedFileIDs = Array(excluded); $0.baselineAssistantCount = baseline.assistantCount
-                $0.appliedReasoning = worker.appliedReasoning
+                $0.appliedReasoning = worker.appliedReasoning; $0.imageToolVerifiedAt = Date()
             }
             try await worker.submit()
 

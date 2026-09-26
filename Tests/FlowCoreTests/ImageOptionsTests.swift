@@ -17,7 +17,7 @@ final class ImageOptionsTests: XCTestCase {
         var project = Project(name: "Test"); project.prompt = "주전자"
         project.aspect = "1:1"; project.background = .transparent; project.generationMode = .instant
         let job = try JobRules.makeBatch(project: project)[0]
-        XCTAssertEqual(job.prompt, "주전자\nsize:1:1\ntransparent_background: true\nn=1")
+        XCTAssertEqual(job.prompt, "주전자\nsize:1:1\ntransparent_background: true")
         XCTAssertEqual(job.reasoning, .instant)
         project.generationMode = .sunburstExperimental; project.aspect = "자유"; project.background = .opaque
         XCTAssertEqual(try JobRules.makeBatch(project: project)[0].prompt, "주전자\ntransparent_background: false\nn=2")

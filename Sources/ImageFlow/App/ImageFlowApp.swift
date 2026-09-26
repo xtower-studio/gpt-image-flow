@@ -12,6 +12,8 @@ import SwiftUI
                 else { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
             }.environment(session).environment(store)
                 .modifier(DevelopmentAppearance())
+                .disabled(store.changingStorage)
+                .sheet(isPresented: $store.showOnboarding) { OnboardingView().environment(store).environment(session) }
                 .frame(minWidth: 1000, minHeight: 680)
                 .task {
                     appDelegate.session = session

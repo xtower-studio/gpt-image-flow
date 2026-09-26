@@ -35,7 +35,7 @@ public enum JobRules {
         return try (0..<count).map { index in
             let variation = variations.isEmpty ? "" : variations[index]
             let size = ["자유", "자동"].contains(project.aspect) ? nil : "size:\(project.aspect)"
-            let full = [prompt, variation.isEmpty ? nil : variation, size, project.background?.promptOption, "n=\(mode.imagesPerRequest)"]
+            let full = [prompt, variation.isEmpty ? nil : variation, size, project.background?.promptOption, mode == .instant ? nil : "n=\(mode.imagesPerRequest)"]
                 .compactMap { $0 }.joined(separator: "\n")
             var job = Job(batchID: batchID, projectID: project.id, prompt: full,
                        label: variation.isEmpty ? "요청 \(index + 1)" : variation,

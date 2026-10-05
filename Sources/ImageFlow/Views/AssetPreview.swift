@@ -1,8 +1,8 @@
 import SwiftUI
 import FlowCore
 
-@MainActor final class ThumbnailCache {
-    static let shared = ThumbnailCache()
+@MainActor final class OriginalImageCache {
+    static let shared = OriginalImageCache()
     let cache = NSCache<NSString, NSImage>()
     init() { cache.totalCostLimit = 64 * 1024 * 1024; cache.countLimit = 180 }
     func image(_ url: URL) async -> NSImage? {
@@ -13,7 +13,7 @@ import FlowCore
         return image
     }
 }
-struct AssetThumbnail: View {
+struct AssetPreview: View {
     let url: URL
     var fit = true
     @State private var image: NSImage?
@@ -21,6 +21,6 @@ struct AssetThumbnail: View {
         Group {
             if let image { Image(nsImage: image).resizable().aspectRatio(contentMode: fit ? .fit : .fill) }
             else { Rectangle().fill(.quaternary.opacity(0.35)).overlay { Image(systemName: "photo").foregroundStyle(.tertiary) } }
-        }.task(id: url) { image = await ThumbnailCache.shared.image(url) }
+        }.task(id: url) { image = await OriginalImageCache.shared.image(url) }
     }
 }

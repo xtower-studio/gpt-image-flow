@@ -44,7 +44,7 @@ struct ComposerView: View {
                             } else { recipes }
                         }
                         ComposerInputCard(text: prompt, references: references, originalID: editing?.id, focusRequest: focusRequest,
-                            thumbnail: store.vault.thumbnail, add: { store.selectImages(projectID: project.id) },
+                            imageURL: store.vault.original, add: { store.selectImages(projectID: project.id) },
                             remove: { id in var copy = current; copy.referenceIDs.removeAll { $0 == id }; store.updateProject(copy) },
                             importFiles: { store.importImages($0, projectID: project.id) })
                     }

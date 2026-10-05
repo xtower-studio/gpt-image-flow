@@ -16,13 +16,15 @@ public struct Project: Codable, Identifiable, Equatable, Sendable {
     public var apiOptions: ImageAPIOptions?
     public var layout: [String: CanvasPoint]?
     public var viewport: CanvasViewport?
+    public var storageFolder: String?
     public var workflow: WorkflowGraph?
-    public init(name: String) { self.name = name }
+    public init(name: String) { self.name = name; storageFolder = AssetPaths.projectFolder(name: name, id: id) }
 }
 
 public struct Asset: Codable, Identifiable, Equatable, Sendable {
     public var id: UUID
     public var projectID: UUID
+    public var relativePath: String?
     public var filename: String
     public var title: String
     public var width: Int

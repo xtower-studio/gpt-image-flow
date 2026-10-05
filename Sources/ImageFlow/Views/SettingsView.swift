@@ -32,6 +32,7 @@ struct SettingsView: View {
                 Button("저장 폴더 열기") { NSWorkspace.shared.open(store.root) }
                 Text("요청과 참조는 생성할 때 선택한 ChatGPT 또는 OpenAI API로 전송됩니다. 원본과 작업 이력은 이 Mac에 저장됩니다.").font(StudioTypography.supporting).foregroundStyle(.secondary)
             }
+            Section("Image Flow") { BrandCredits() }
         }.formStyle(.grouped).frame(width: 480, height: 710).sheet(isPresented: $showAPIConnection) { APIConnectionView() }
     }
 }

@@ -75,7 +75,9 @@ import FlowCore
                         library.restoreMissingAssets([asset])
                         if !journal.jobs[index].results.contains(where: { $0.id == asset.id }) { journal.jobs[index].results.append(asset) }
                     }
-                    try await vault.rebuildMissingThumbnails(library.assets)
+                    let snapshot = PortableLibrary(library: library, journal: journal), directory = root
+                    let organized = try await Task.detached(priority: .utility) { try snapshot.organized(in: directory) }.value
+                    library = organized.library; journal = organized.journal
                     try persist()
                 } catch { report(error) }
             }
@@ -138,7 +140,7 @@ import FlowCore
                     if let existing = library.assets.first(where: { vault.original($0).standardizedFileURL == url.standardizedFileURL }) {
                         attach(existing, to: projectID); continue
                     }
-                    let asset = try await vault.ingest(url: url, projectID: projectID)
+                    let asset = try await vault.ingest(url: url, projectID: projectID, projectFolder: project(projectID)?.storageFolder)
                     upsert(asset)
                     if let index = library.projects.firstIndex(where: { $0.id == projectID }) { library.projects[index].referenceIDs.append(asset.id) }
                     try persist()

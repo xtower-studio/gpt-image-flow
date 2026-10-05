@@ -86,7 +86,7 @@ struct APIAdvancedView: View {
         importing = true
         Task {
             defer { importing = false }
-            do { let asset = try await store.vault.ingest(url: url, projectID: projectID); store.upsert(asset); store.flush(); options.maskAssetID = asset.id }
+            do { let asset = try await store.vault.ingest(url: url, projectID: projectID, projectFolder: store.project(projectID)?.storageFolder); store.upsert(asset); store.flush(); options.maskAssetID = asset.id }
             catch { localError = error.localizedDescription }
         }
     }

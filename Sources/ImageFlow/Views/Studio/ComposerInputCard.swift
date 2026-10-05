@@ -6,7 +6,7 @@ struct ComposerInputCard: View {
     let references: [Asset]
     let originalID: UUID?
     let focusRequest: Int
-    var thumbnail: (Asset) -> URL
+    var imageURL: (Asset) -> URL
     var add: () -> Void
     var remove: (UUID) -> Void
     var importFiles: ([URL]) -> Void
@@ -48,7 +48,7 @@ struct ComposerInputCard: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(references) { asset in
-                            AssetThumbnail(url: thumbnail(asset)).frame(width: 54, height: 54)
+                            AssetPreview(url: imageURL(asset)).frame(width: 54, height: 54)
                                 .background(StudioPalette.stage, in: RoundedRectangle(cornerRadius: 10))
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                                 .help(originalID == asset.id ? "수정 원본: \(asset.title)" : asset.title)

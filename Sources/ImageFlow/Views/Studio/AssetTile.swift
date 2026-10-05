@@ -13,7 +13,7 @@ struct AssetTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 7 : 11) {
             GeometryReader { geometry in
-                AssetThumbnail(url: store.vault.thumbnail(asset))
+                AssetPreview(url: store.vault.original(asset))
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .background(Color.primary.opacity(0.025))
             }.aspectRatio(compact ? 1 : 0.92, contentMode: .fit)

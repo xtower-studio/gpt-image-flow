@@ -45,7 +45,8 @@ extension WorkspaceStore {
                 restored.journal.paused = true; restored.journal.pauseReason = "복원한 보관함입니다. 대기 작업을 확인한 후 계속할 수 있습니다."
                 for i in (restored.journal.workflowRuns ?? []).indices where restored.journal.workflowRuns?[i].state == .running { restored.journal.workflowRuns?[i].state = .paused }
             }
-            try await AssetVault(root: destination).rebuildMissingThumbnails(restored.library.assets)
+            let snapshot = restored
+            restored = try await Task.detached { try snapshot.organized(in: destination) }.value
             let next = try LibraryPersistence(root: destination)
             try next.save(restored.library)
             try restored.journal.save(destination.appendingPathComponent("Jobs.json"))

@@ -106,7 +106,7 @@ final class FlowCoreTests: XCTestCase {
         let vault = AssetVault(root: root), bytes = try png(), job = UUID()
         let asset = try await vault.store(bytes, projectID: UUID(), title: "test", isReference: false, jobID: job)
         XCTAssertEqual(try Data(contentsOf: vault.original(asset)), bytes)
-        XCTAssertTrue(FileManager.default.fileExists(atPath: vault.thumbnail(asset).path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("Thumbnails").path))
         let receipts = try await AssetVault(root: root).receipts()
         XCTAssertEqual(receipts.map(\.id), [asset.id])
         XCTAssertEqual(receipts.first?.jobID, job)

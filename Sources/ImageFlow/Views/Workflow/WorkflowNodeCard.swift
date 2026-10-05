@@ -56,7 +56,7 @@ struct WorkflowNodeCard: View {
                             .accessibilityIdentifier("workflow-prompt-\(node.id)")
                     case .reference:
                         if let id = node.assetID, let asset = store.asset(id) {
-                            AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 172).frame(maxWidth: .infinity)
+                            AssetPreview(url: store.vault.original(asset)).frame(height: 172).frame(maxWidth: .infinity)
                                 .clipShape(RoundedRectangle(cornerRadius: 8)).onTapGesture(count: 2) { preview(asset) }
                             Text(asset.displayDetails).font(StudioTypography.metadata).foregroundStyle(.secondary)
                         } else { Label("참조 원본이 없습니다", systemImage: "photo.badge.exclamationmark").foregroundStyle(.orange) }
@@ -121,7 +121,7 @@ struct WorkflowNodeCard: View {
         if job.state.isRunning || job.state == .queued {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 ForEach(ProjectImageSlot.make(assets: job.results, jobs: [job])) { slot in
-                    if let asset = slot.asset { AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 100) }
+                    if let asset = slot.asset { AssetPreview(url: store.vault.original(asset)).frame(height: 100) }
                     else { Button { openJob(job) } label: { GenerationPlaceholder(job: job, ordinal: slot.ordinal, compact: true).frame(height: 100) }.buttonStyle(.plain) }
                 }
             }
@@ -139,14 +139,14 @@ struct WorkflowNodeCard: View {
         }
         if !job.results.isEmpty && !job.state.isRunning && job.state != .queued {
             let chosen = job.results.first { $0.id == node.selectedAssetID } ?? job.results.first!
-            AssetThumbnail(url: store.vault.thumbnail(chosen)).frame(height: 112).frame(maxWidth: .infinity)
+            AssetPreview(url: store.vault.original(chosen)).frame(height: 112).frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 8)).onTapGesture(count: 2) { preview(chosen) }
                 .contextMenu { Button("크게 보기") { preview(chosen) }; Button("내보내기") { store.export([chosen]) } }
             ScrollView(.horizontal) {
                 HStack(spacing: 6) {
                     ForEach(job.results) { asset in
                         Button { store.chooseWorkflowResult(projectID: projectID, nodeID: node.id, assetID: asset.id) } label: {
-                            AssetThumbnail(url: store.vault.thumbnail(asset)).frame(width: 44, height: 44).clipShape(RoundedRectangle(cornerRadius: 6))
+                            AssetPreview(url: store.vault.original(asset)).frame(width: 44, height: 44).clipShape(RoundedRectangle(cornerRadius: 6))
                                 .overlay { RoundedRectangle(cornerRadius: 6).strokeBorder(node.selectedAssetID == asset.id || job.results.count == 1 ? Color.accentColor : .clear, lineWidth: 2) }
                         }.buttonStyle(.plain).disabled(job.state != .saved)
                             .accessibilityLabel("다음 단계에 이미지 \((job.results.firstIndex(of: asset) ?? 0) + 1) 사용")

@@ -215,7 +215,7 @@ struct WorkflowCanvasView: View {
                         Button {
                             var node = WorkflowNode(kind: .reference, title: asset.title, position: insertionPoint(size))
                             node.assetID = asset.id; store.changeWorkflow(project.id, undoable: true) { $0.nodes.append(node) }; showAssets = false
-                        } label: { AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 88).clipShape(RoundedRectangle(cornerRadius: 8)) }.buttonStyle(.plain).help(asset.title)
+                        } label: { AssetPreview(url: store.vault.original(asset)).frame(height: 88).clipShape(RoundedRectangle(cornerRadius: 8)) }.buttonStyle(.plain).help(asset.title)
                     }
                 }
             }

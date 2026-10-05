@@ -36,7 +36,7 @@ struct JobResponseView: View {
                     if job.state == .failed { Button("API 연결 관리…") { showAPIConnection = true } }
                 }
                 if !job.results.isEmpty {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))]) { ForEach(job.results) { asset in AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 110) } }
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))]) { ForEach(job.results) { asset in AssetPreview(url: store.vault.original(asset)).frame(height: 110) } }
                 }
                 if job.state.isRunning || job.state == .queued { GenerationActivityView(job: job) }
                 if let response = job.responseText { Text(response).font(StudioTypography.body).lineSpacing(StudioTypography.lineSpacing).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }

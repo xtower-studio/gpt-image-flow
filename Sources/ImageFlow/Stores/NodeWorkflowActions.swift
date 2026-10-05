@@ -116,7 +116,7 @@ extension WorkspaceStore {
                 for (index, url) in urls.filter(\.isFileURL).enumerated() {
                     let reference: Asset
                     if let existing = library.assets.first(where: { vault.original($0).standardizedFileURL == url.standardizedFileURL }) { reference = existing }
-                    else { reference = try await vault.ingest(url: url, projectID: projectID); upsert(reference) }
+                    else { reference = try await vault.ingest(url: url, projectID: projectID, projectFolder: project(projectID)?.storageFolder); upsert(reference) }
                     var node = WorkflowNode(kind: .reference, title: reference.title, position: CanvasPoint(x: position.x, y: position.y + Double(index) * 310))
                     node.assetID = reference.id
                     changeWorkflow(projectID, undoable: true) { $0.nodes.append(node) }

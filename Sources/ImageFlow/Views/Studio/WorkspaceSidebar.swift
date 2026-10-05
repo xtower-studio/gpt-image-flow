@@ -47,7 +47,7 @@ struct WorkspaceSidebar: View {
     }
     @ViewBuilder private func projectCover(_ project: Project) -> some View {
         if let asset = store.library.assets.last(where: { ($0.projectID == project.id || project.referenceIDs.contains($0.id)) && !(store.library.hiddenAssetIDs ?? []).contains($0.id) }) {
-            AssetThumbnail(url: store.vault.thumbnail(asset), fit: false).frame(width: 28, height: 28).clipped().clipShape(RoundedRectangle(cornerRadius: 5)).accessibilityHidden(true)
+            AssetPreview(url: store.vault.original(asset), fit: false).frame(width: 28, height: 28).clipped().clipShape(RoundedRectangle(cornerRadius: 5)).accessibilityHidden(true)
         } else { Image(systemName: "folder").font(.system(size: 17)).foregroundStyle(.secondary).frame(width: 28, height: 28) }
     }
 }

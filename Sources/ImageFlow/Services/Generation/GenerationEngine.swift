@@ -162,7 +162,7 @@ import FlowCore
                     let title = job.expectedImageCount > 1 || candidates.count > 1 ? "\(job.label) · \(index + 1)" : job.label
                     let evidence = byFile[image.fileID] ?? ImageGenerationMetadata(fileID: image.fileID, messageID: image.responseID, genSize: nil, genSizeV2: nil)
                     let asset = try await store.vault.store(bytes, projectID: job.projectID, title: title,
-                        isReference: false, jobID: job.id, parentID: job.parentID, generationMetadata: evidence)
+                        isReference: false, jobID: job.id, parentID: job.parentID, generationMetadata: evidence, projectFolder: store.project(job.projectID)?.storageFolder)
                     store.upsert(asset)
                     store.placeResult(asset, job: job, index: index)
                     try store.updateJob(job.id) { $0.results.append(asset) }

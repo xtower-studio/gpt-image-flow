@@ -38,7 +38,7 @@ struct CompareView: View {
                                 let ratio = min(canvas.size.width / CGFloat(max(1, asset.width)), canvas.size.height / CGFloat(max(1, asset.height)))
                                 let scale = actualSize ? 1 / displayScale : ratio * zoom
                                 ScrollView([.horizontal, .vertical]) {
-                                    AssetThumbnail(url: store.vault.original(asset))
+                                    AssetPreview(url: store.vault.original(asset))
                                         .frame(width: CGFloat(asset.width) * scale, height: CGFloat(asset.height) * scale)
                                         .frame(minWidth: canvas.size.width, minHeight: canvas.size.height)
                                 }

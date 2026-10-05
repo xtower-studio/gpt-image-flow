@@ -58,7 +58,10 @@ import FlowCore
 private actor APIKeychain {
     static let shared = APIKeychain()
     private var query: [String: Any] {
-        [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: "app.imageflow.mac.openai-api", kSecAttrAccount as String: "personal"]
+        [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: "studio.xtower.imageflow.openai-api", kSecAttrAccount as String: "personal"]
+    }
+    private var legacyQuery: [String: Any] {
+        var value = query; value[kSecAttrService as String] = "app.imageflow.mac.openai-api"; return value
     }
     func read(interactive: Bool) -> (APICredentials?, OSStatus) {
         var previous: DarwinBoolean = true
@@ -67,9 +70,18 @@ private actor APIKeychain {
         defer { SecKeychainSetUserInteractionAllowed(previous.boolValue) }
         var query = query; query[kSecReturnData as String] = true; query[kSecMatchLimit as String] = kSecMatchLimitOne
         var value: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &value)
+        var status = SecItemCopyMatching(query as CFDictionary, &value)
+        var legacy = false
+        if status == errSecItemNotFound {
+            query[kSecAttrService as String] = "app.imageflow.mac.openai-api"
+            status = SecItemCopyMatching(query as CFDictionary, &value); legacy = true
+        }
         guard status == errSecSuccess, let data = value as? Data,
               let credentials = try? JSONDecoder().decode(APICredentials.self, from: data) else { return (nil, status) }
+        if legacy {
+            do { try save(credentials); SecItemDelete(legacyQuery as CFDictionary) }
+            catch { return (credentials, errSecSuccess) } // Keep the working legacy key until migration succeeds.
+        }
         return (credentials, status)
     }
     func save(_ value: APICredentials) throws {
@@ -81,5 +93,9 @@ private actor APIKeychain {
         }
         guard status == errSecSuccess else { throw FlowError.message("macOS 키체인에 저장하지 못했습니다 (\(status)).") }
     }
-    func delete() -> OSStatus { SecItemDelete(query as CFDictionary) }
+    func delete() -> OSStatus {
+        let old = SecItemDelete(legacyQuery as CFDictionary)
+        guard old == errSecSuccess || old == errSecItemNotFound else { return old }
+        return SecItemDelete(query as CFDictionary)
+    }
 }

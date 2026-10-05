@@ -12,7 +12,7 @@ struct InspectorView: View {
             if let asset {
                 VStack(alignment: .leading, spacing: PanelSpacing.section) {
                     VStack(alignment: .leading, spacing: 12) {
-                        AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 180).frame(maxWidth: .infinity)
+                        AssetPreview(url: store.vault.original(asset)).frame(height: 180).frame(maxWidth: .infinity)
                             .background(StudioPalette.stage, in: RoundedRectangle(cornerRadius: 18)).clipShape(RoundedRectangle(cornerRadius: 18))
                         Text(asset.title).font(StudioTypography.title).textSelection(.enabled)
                         HStack {
@@ -36,7 +36,7 @@ struct InspectorView: View {
                                 PanelSectionHeading(title: "참조 이미지", note: "\(job.referenceIDs.count)개")
                                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 62))], spacing: 8) {
                                     ForEach(job.referenceIDs.compactMap { store.asset($0) }) { reference in
-                                        AssetThumbnail(url: store.vault.thumbnail(reference)).frame(height: 62).background(StudioPalette.stage, in: RoundedRectangle(cornerRadius: 12)).help(reference.title)
+                                        AssetPreview(url: store.vault.original(reference)).frame(height: 62).background(StudioPalette.stage, in: RoundedRectangle(cornerRadius: 12)).help(reference.title)
                                     }
                                 }
                             }
@@ -55,7 +55,7 @@ struct InspectorView: View {
                     if let parentID = asset.parentID, let parent = store.asset(parentID) {
                         VStack(alignment: .leading, spacing: PanelSpacing.heading) {
                             PanelSectionHeading(title: "수정 원본")
-                            HStack(spacing: 10) { AssetThumbnail(url: store.vault.thumbnail(parent)).frame(width: 44, height: 44); Text(parent.title).font(StudioTypography.supporting) }
+                            HStack(spacing: 10) { AssetPreview(url: store.vault.original(parent)).frame(width: 44, height: 44); Text(parent.title).font(StudioTypography.supporting) }
                         }
                     }
                     HStack(spacing: 18) {

@@ -27,7 +27,7 @@ struct TaskHistoryView: View {
                         ForEach(jobs) { job in
                             Button { selectedJobID = job.id } label: {
                                 HStack(alignment: .top, spacing: 12) {
-                                    if let asset = job.results.first { AssetThumbnail(url: store.vault.thumbnail(asset), fit: false).frame(width: 46, height: 46).clipped().clipShape(RoundedRectangle(cornerRadius: 12)) }
+                                    if let asset = job.results.first { AssetPreview(url: store.vault.original(asset), fit: false).frame(width: 46, height: 46).clipped().clipShape(RoundedRectangle(cornerRadius: 12)) }
                                     else { Image(systemName: symbol(job)).font(.system(size: 19)).foregroundStyle(job.state.needsAttention && job.state != .responded ? Color.orange : .secondary).frame(width: 46, height: 46).background(.quaternary.opacity(0.25), in: RoundedRectangle(cornerRadius: 12)) }
                                     VStack(alignment: .leading, spacing: 6) {
                                         HStack { Text(job.label).font(StudioTypography.item).lineLimit(1); Spacer(); Text(job.createdAt, style: .time).font(StudioTypography.metadata).foregroundStyle(.secondary) }

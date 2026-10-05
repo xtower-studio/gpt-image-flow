@@ -2,7 +2,7 @@ import SwiftUI
 
 @main struct ImageFlowApp: App {
     @NSApplicationDelegateAdaptor(FlowAppDelegate.self) var appDelegate
-    @State private var session = WebSession()
+    @State private var session: WebSession = { AppIdentity.prepare(); return WebSession() }()
     @State private var store = WorkspaceStore()
     @State private var engine: GenerationEngine?
     var body: some Scene {
@@ -12,10 +12,11 @@ import SwiftUI
                 else { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
             }.environment(session).environment(store)
                 .modifier(DevelopmentAppearance())
-                .disabled(store.changingStorage)
+                .disabled(store.changingStorage || store.restoringAssets)
                 .sheet(isPresented: $store.showOnboarding) { OnboardingView().environment(store).environment(session) }
                 .frame(minWidth: 1000, minHeight: 680)
                 .task {
+                    if let warning = AppIdentity.migrationWarning { store.errorMessage = warning; AppIdentity.migrationWarning = nil }
                     appDelegate.session = session
                     appDelegate.store = store
                     if engine == nil { let engine = GenerationEngine(store: store, session: session); self.engine = engine; appDelegate.engine = engine; engine.start() }
@@ -26,7 +27,9 @@ import SwiftUI
         .defaultSize(width: 1280, height: 840)
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified)
-        .commands { StudioCommands() }
+        .commands { StudioCommands(); BrandCommands() }
+        Window("Image Flow 정보", id: "about") { AboutView() }
+            .windowResizability(.contentSize)
         Settings {
             if let engine { SettingsView().environment(session).environment(store).environment(engine) }
         }
@@ -70,4 +73,11 @@ import SwiftUI
         }
     }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply { store?.flush(); return .terminateNow }
+}
+
+struct BrandCommands: Commands {
+    @Environment(\.openWindow) private var openWindow
+    var body: some Commands {
+        CommandGroup(replacing: .appInfo) { Button("Image Flow 정보") { openWindow(id: "about") } }
+    }
 }

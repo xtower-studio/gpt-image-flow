@@ -63,7 +63,7 @@ struct RecipeLibraryView: View {
                                 Text("\(selected.settings.generationMode?.label ?? "자동") · \(selected.settings.aspect) · \(selected.settings.copies)회 요청").font(StudioTypography.metadata).foregroundStyle(.secondary)
                                 if !selected.settings.referenceIDs.isEmpty {
                                     Toggle("저장한 참조 이미지로 교체", isOn: $includeReferences).font(StudioTypography.control)
-                                    HStack { ForEach(selected.settings.referenceIDs.compactMap { store.asset($0) }.prefix(5)) { asset in AssetThumbnail(url: store.vault.thumbnail(asset)).frame(width: 52, height: 52).clipShape(RoundedRectangle(cornerRadius: 8)) } }
+                                    HStack { ForEach(selected.settings.referenceIDs.compactMap { store.asset($0) }.prefix(5)) { asset in AssetPreview(url: store.vault.original(asset)).frame(width: 52, height: 52).clipShape(RoundedRectangle(cornerRadius: 8)) } }
                                 }
                             }.padding(.trailing, 4)
                         }

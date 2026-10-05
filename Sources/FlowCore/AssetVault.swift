@@ -6,45 +6,34 @@ import UniformTypeIdentifiers
 public actor AssetVault {
     public nonisolated let root: URL
     public init(root: URL) { self.root = root }
-    public nonisolated func original(_ asset: Asset) -> URL { root.appendingPathComponent("Originals").appendingPathComponent(asset.filename) }
-    public nonisolated func thumbnail(_ asset: Asset) -> URL { root.appendingPathComponent("Thumbnails/\(asset.id).png") }
-    public func ingest(url: URL, projectID: UUID, title: String? = nil) throws -> Asset {
+    public nonisolated func original(_ asset: Asset) -> URL { root.appendingPathComponent(AssetPaths.relativePath(asset)) }
+    public func ingest(url: URL, projectID: UUID, title: String? = nil, projectFolder: String? = nil) throws -> Asset {
         let access = url.startAccessingSecurityScopedResource()
         defer { if access { url.stopAccessingSecurityScopedResource() } }
         return try store(Data(contentsOf: url), projectID: projectID, title: title ?? url.deletingPathExtension().lastPathComponent,
-                         isReference: true)
+                         isReference: true, projectFolder: projectFolder)
     }
     public func store(_ bytes: Data, projectID: UUID, title: String, isReference: Bool,
-                      jobID: UUID? = nil, parentID: UUID? = nil, generationMetadata: ImageGenerationMetadata? = nil, apiModel: String? = nil) throws -> Asset {
+                      jobID: UUID? = nil, parentID: UUID? = nil, generationMetadata: ImageGenerationMetadata? = nil, apiModel: String? = nil, projectFolder: String? = nil) throws -> Asset {
         guard bytes.count <= 50 * 1024 * 1024 else { throw FlowError.message("앱에서 가져올 수 있는 파일은 50MB 이하입니다.") }
         guard let source = CGImageSourceCreateWithData(bytes as CFData, nil),
               let type = CGImageSourceGetType(source),
+              CGImageSourceCreateImageAtIndex(source, 0, [kCGImageSourceShouldCache: false] as CFDictionary) != nil,
               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
               let width = properties[kCGImagePropertyPixelWidth] as? Int,
-              let height = properties[kCGImagePropertyPixelHeight] as? Int, width > 0, height > 0,
-              let small = CGImageSourceCreateThumbnailAtIndex(source, 0, [
-                kCGImageSourceCreateThumbnailFromImageAlways: true,
-                kCGImageSourceCreateThumbnailWithTransform: true,
-                kCGImageSourceThumbnailMaxPixelSize: 640,
-                kCGImageSourceShouldCacheImmediately: true
-              ] as CFDictionary) else { throw FlowError.message("이미지 파일을 읽을 수 없습니다.") }
+              let height = properties[kCGImagePropertyPixelHeight] as? Int, width > 0, height > 0 else { throw FlowError.message("이미지 파일을 읽을 수 없습니다.") }
         let id = UUID()
         let ext = UTType(type as String)?.preferredFilenameExtension ?? "png"
         var asset = Asset(id: id, projectID: projectID, filename: "\(id).\(ext)", title: title,
                           width: width, height: height, digest: Self.hash(bytes), isReference: isReference,
                           jobID: jobID, parentID: parentID)
         asset.generationMetadata = generationMetadata; asset.apiModel = apiModel
-        for folder in ["Originals", "Thumbnails", "Receipts"] {
+        asset.relativePath = AssetPaths.relativePath(asset, folder: projectFolder ?? projectID.uuidString)
+        try FileManager.default.createDirectory(at: original(asset).deletingLastPathComponent(), withIntermediateDirectories: true)
+        for folder in ["Receipts"] {
             try FileManager.default.createDirectory(at: root.appendingPathComponent(folder), withIntermediateDirectories: true)
         }
         try bytes.write(to: original(asset), options: .atomic)
-        let thumbnailData = NSMutableData()
-        guard let destination = CGImageDestinationCreateWithData(thumbnailData, UTType.png.identifier as CFString, 1, nil) else {
-            throw FlowError.message("미리보기를 저장할 수 없습니다.")
-        }
-        CGImageDestinationAddImage(destination, small, nil)
-        guard CGImageDestinationFinalize(destination) else { throw FlowError.message("미리보기를 저장할 수 없습니다.") }
-        try (thumbnailData as Data).write(to: thumbnail(asset), options: .atomic)
         do {
             try JSONEncoder().encode(asset).write(to: root.appendingPathComponent("Receipts/\(id).json"), options: .atomic)
         }
@@ -59,27 +48,10 @@ public actor AssetVault {
         return try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension == "json" }.compactMap { url in
                 let asset = try JSONDecoder().decode(Asset.self, from: Data(contentsOf: url))
-                guard let bytes = try? Data(contentsOf: original(asset)), Self.hash(bytes) == asset.digest else { return nil }
+                guard let path = try? AssetPaths.original(asset, in: root),
+                      let bytes = try? Data(contentsOf: path), Self.hash(bytes) == asset.digest else { return nil }
                 return asset
             }
-    }
-    public func rebuildMissingThumbnails(_ assets: [Asset]) throws {
-        let fm = FileManager.default
-        try fm.createDirectory(at: root.appendingPathComponent("Thumbnails"), withIntermediateDirectories: true)
-        for asset in assets where !fm.fileExists(atPath: thumbnail(asset).path) {
-            let url = try PortableLibrary.original(asset, in: root)
-            guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
-                  let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
-                    kCGImageSourceCreateThumbnailFromImageAlways: true,
-                    kCGImageSourceCreateThumbnailWithTransform: true,
-                    kCGImageSourceThumbnailMaxPixelSize: 640
-                  ] as CFDictionary) else { throw FlowError.message("미리보기를 복원할 수 없습니다: \(asset.title)") }
-            let data = NSMutableData()
-            guard let output = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil) else { throw FlowError.message("미리보기 저장 실패") }
-            CGImageDestinationAddImage(output, image, nil)
-            guard CGImageDestinationFinalize(output) else { throw FlowError.message("미리보기 저장 실패") }
-            try (data as Data).write(to: thumbnail(asset), options: .atomic)
-        }
     }
     public static func hash(_ bytes: Data) -> String { SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined() }
 

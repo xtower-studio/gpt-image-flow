@@ -37,7 +37,7 @@ struct StudioPanel: View {
             VStack(alignment: .leading, spacing: PanelSpacing.section) {
                 Text("\(selectedAssets.count)개 이미지").font(StudioTypography.title)
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 84))]) {
-                    ForEach(selectedAssets) { asset in AssetThumbnail(url: store.vault.thumbnail(asset)).frame(height: 90).clipShape(RoundedRectangle(cornerRadius: 12)) }
+                    ForEach(selectedAssets) { asset in AssetPreview(url: store.vault.original(asset)).frame(height: 90).clipShape(RoundedRectangle(cornerRadius: 12)) }
                 }
                 Button { store.export(selectedAssets) } label: { Label("선택한 이미지 내보내기", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity) }.studioActionButton(prominent: true).controlSize(.large)
                 Button("모두 참조에 추가") { for asset in selectedAssets { store.attach(asset, to: project.id) }; tab = .create }

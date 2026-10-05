@@ -218,7 +218,7 @@ struct CollectionImageCell: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             GeometryReader { geometry in
-                AssetThumbnail(url: store.vault.thumbnail(asset)).frame(width: geometry.size.width, height: geometry.size.height)
+                AssetPreview(url: store.vault.original(asset)).frame(width: geometry.size.width, height: geometry.size.height)
             }.aspectRatio(1, contentMode: .fit)
                 .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
                 .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(selected ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: selected ? 2 : 1) }

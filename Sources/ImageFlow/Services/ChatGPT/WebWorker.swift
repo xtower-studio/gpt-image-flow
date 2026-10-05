@@ -158,6 +158,9 @@ enum WorkerError: LocalizedError {
             guard confirmed else { throw WorkerError.attachment }
         }
         try await applyReasoning(job.executionReasoning)
+        // Attachment/reasoning controls can remount the editor. Re-select only
+        // before submission, without replacing its prompt or attached files.
+        _ = try await call("ensureImageMode", as: Ack.self)
         _ = try await call("verifyImageMode", as: Ack.self)
         let deadline = Date().addingTimeInterval(15)
         while Date() < deadline {

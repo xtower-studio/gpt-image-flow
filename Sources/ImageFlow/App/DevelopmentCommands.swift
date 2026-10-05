@@ -9,7 +9,9 @@ extension FlowAppDelegate {
               let operation = command["operation"], let store else { return }
         try? FileManager.default.removeItem(at: url)
         do {
-            if operation == "projectSlotsQA" {
+            if operation == "inspectToolMenu" {
+                try await inspectToolMenu(directory: directory)
+            } else if operation == "projectSlotsQA" {
                 guard !store.library.projects.contains(where: { $0.name == "프로젝트 이미지 검증" }), let reference = store.library.assets.first(where: { $0.id == UUID(uuidString: "D1A84191-D395-43FD-9D34-7AA9763AE45D") }) else { return }
                 var project = Project(name: "프로젝트 이미지 검증"); project.prompt = "Four distinct cobalt ceramic teapot designs on warm ivory backgrounds, product photography."
                 project.generationMode = .automatic
@@ -165,7 +167,7 @@ extension FlowAppDelegate {
                       let job = store.jobs.first(where: { $0.projectID == project.id && $0.state == .failed && $0.submittedAt == nil }) {
                 engine.retryBeforeSubmission(job)
             } else if operation == "composerCompatibilitySmoke" {
-                let name = "입력창 호환성 검증 · 2026-09"
+                let name = "입력창 호환성 검증 · 2026-10"
                 guard !store.library.projects.contains(where: { $0.name == name }) else {
                     throw FlowError.message("이미 검증 요청이 있습니다. 중복 전송하지 않았습니다.")
                 }

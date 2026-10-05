@@ -2,7 +2,7 @@
 
 ChatGPT 이미지 생성의 참조 첨부 → 여러 시안 생성 → 비교 → 수정 → 내보내기를 하나로 연결하는 네이티브 macOS 앱.
 
-**0.11 온보딩 · 사용자 보관함 · 생성 진행 표시.** SwiftUI/AppKit으로 작업 공간을 만들고, ChatGPT 작업이 진행되는 동안만 WKWebView를 사용한다. 자동·빠르게는 ChatGPT를, 고급은 OpenAI 이미지 API를 사용한다. API 사용료는 OpenAI가 직접 청구하며 Image Flow는 어떠한 수수료도 받지 않는다. API 연결은 선택 사항이다. 프롬프트·참조·생성 노드를 연결하는 워크플로 캔버스, 결과 선택과 분기·단계별 재실행, 최대 3개 요청 병렬 실행, 내부 이미지 재첨부, 비교·수정·내보내기를 지원한다. [0.11 사용성과 보관함](docs/V011_PORTABLE_STUDIO.md), [0.10 노드 워크플로](docs/V010_NODE_WORKFLOWS.md), [0.10.1 ChatGPT 호환성 수정과 검증](docs/V0101_CHATGPT_COMPATIBILITY.md)을 참고한다.
+**0.11.1 이미지 생성 도구 호환성 보완.** SwiftUI/AppKit으로 작업 공간을 만들고, ChatGPT 작업이 진행되는 동안만 WKWebView를 사용한다. 자동·빠르게는 ChatGPT를, 고급은 OpenAI 이미지 API를 사용한다. API 사용료는 OpenAI가 직접 청구하며 Image Flow는 어떠한 수수료도 받지 않는다. API 연결은 선택 사항이다. 프롬프트·참조·생성 노드를 연결하는 워크플로 캔버스, 결과 선택과 분기·단계별 재실행, 최대 3개 요청 병렬 실행, 내부 이미지 재첨부, 비교·수정·내보내기를 지원한다. [0.11.1 본문 배지 호환성](docs/V0111_IMAGE_TOOL_COMPATIBILITY.md), [0.11 사용성과 보관함](docs/V011_PORTABLE_STUDIO.md), [0.10 노드 워크플로](docs/V010_NODE_WORKFLOWS.md), [0.10.1 ChatGPT 호환성 수정과 검증](docs/V0101_CHATGPT_COMPATIBILITY.md)을 참고한다.
 
 ## 실행
 

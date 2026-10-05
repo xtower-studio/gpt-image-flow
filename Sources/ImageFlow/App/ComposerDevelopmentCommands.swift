@@ -35,6 +35,19 @@ extension FlowAppDelegate {
         for task in tasks { proof.append(await task.value) }
         try JSONEncoder().encode(proof).write(to: directory.appendingPathComponent("composer-concurrency.json"))
     }
+    func inspectToolMenu(directory: URL) async throws {
+        guard let session, engine?.workers.isEmpty == true else { return }
+        let worker = try WebWorker(slot: 0, session: session); defer { worker.close() }
+        try await worker.load()
+        _ = try await worker.web.evaluateJavaScript("""
+        (()=>{const el=document.querySelector('div[contenteditable=true].ProseMirror');el.replaceChildren(document.createElement('p'));el.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'deleteContentBackward'}));})()
+        """)
+        try await worker.wait(1)
+        _ = try await worker.web.evaluateJavaScript("document.querySelector('button[data-composer-navigation-target=\"add-context\"]')?.click()")
+        try await worker.wait(1)
+        let value = try await worker.web.evaluateJavaScript("JSON.stringify({form:document.querySelector('form')?.outerHTML,menus:Array.from(document.querySelectorAll('button,[role=menuitem]')).filter(el=>/이미지|image/i.test(el.innerText)).map(el=>el.parentElement.outerHTML.slice(0,12000))})") as? String ?? ""
+        try value.write(to: directory.appendingPathComponent("tool-menu-october.json"), atomically: true, encoding: .utf8)
+    }
     func captureImageToolProof(directory: URL) async throws {
         guard let session, engine?.workers.isEmpty == true else { return }
         let worker = try WebWorker(slot: 0, session: session)
@@ -46,7 +59,7 @@ extension FlowAppDelegate {
         worker.host.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
         try await worker.wait(1)
         let evidence = try await worker.web.evaluateJavaScript("""
-        JSON.stringify({toolButtons:Array.from(document.querySelectorAll('form button')).filter(el=>/이미지.*제거|Remove.*image/i.test(el.getAttribute('aria-label')||'')).map(el=>({label:el.getAttribute('aria-label'),text:el.innerText})),prompt:document.querySelector('#prompt-textarea,div[contenteditable=true].ProseMirror')?.innerText,submitted:false})
+        JSON.stringify({inlineTools:Array.from(document.querySelectorAll('form [data-system-hint-type="picture_v2"],form [data-prompt-link-href="chatgpt-system-hint://picture_v2"]')).map(el=>({hint:el.getAttribute('data-system-hint-type'),href:el.getAttribute('data-prompt-link-href'),text:el.innerText})),toolButtons:Array.from(document.querySelectorAll('form button')).filter(el=>/이미지.*제거|Remove.*image/i.test(el.getAttribute('aria-label')||'')).map(el=>({label:el.getAttribute('aria-label'),text:el.innerText})),prompt:document.querySelector('#prompt-textarea,div[contenteditable=true].ProseMirror')?.innerText,submitted:false})
         """) as? String ?? ""
         try evidence.write(to: directory.appendingPathComponent("image-tool-proof.json"), atomically: true, encoding: .utf8)
         let image = try await worker.web.takeSnapshot(configuration: nil)

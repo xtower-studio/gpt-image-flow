@@ -152,3 +152,42 @@ extension AdapterWorkflowTests {
         XCTAssertEqual(images.map { $0["fileID"] as! String }, (0..<4).map { "generated-reply-\($0)" })
     }
 }
+
+extension AdapterWorkflowTests {
+    @MainActor func testNativeInlineToolSurvivesPromptReplacementWithoutReopeningMenu() async throws {
+        let web = try await fixture("""
+        <form><div class="ProseMirror" contenteditable="true" data-composer-markdown><p><span contenteditable="false" data-inline-selection-pill data-system-hint-type="picture_v2" data-prompt-link-href="chatgpt-system-hint://picture_v2" data-native-schema="retained">이미지 생성</span> Old draft</p></div>
+        <button type="button" data-composer-navigation-target="add-context" onclick="window.menuOpened=true">+</button></form>
+        """)
+        defer { web.stopLoading() }
+        for _ in 0..<2 { _ = try await call(web, "composeImage", payload: ["prompt":"New <teapot>\nsize:1:1"]) }
+        let result = try await web.evaluateJavaScript("""
+        (()=>{const el=document.querySelector('.ProseMirror'),copy=el.cloneNode(true);copy.querySelector('span').remove();return {pills:el.querySelectorAll('[data-system-hint-type=picture_v2]').length,schema:el.querySelector('span').dataset.nativeSchema,text:Array.from(copy.children).map(p=>p.textContent).join('\\n').trim(),menu:window.menuOpened===true};})()
+        """) as! [String: Any]
+        XCTAssertEqual(result["pills"] as? Int, 1)
+        XCTAssertEqual(result["schema"] as? String, "retained")
+        XCTAssertEqual(result["text"] as? String, "New <teapot>\nsize:1:1")
+        XCTAssertEqual(result["menu"] as? Bool, false)
+        _ = try await call(web, "ensureImageMode")
+    }
+    @MainActor func testSlowNativeToolSelectionWaitsForActualBadge() async throws {
+        let html = modernComposer.replacingOccurrences(of: "form.append(selected);item.remove()", with: "setTimeout(()=>form.append(selected),2500);item.remove()")
+        let web = try await fixture(html)
+        defer { web.stopLoading() }
+        _ = try await call(web, "composeImage", payload: ["prompt":"A teapot"])
+        _ = try await call(web, "verifyImageMode")
+        let sent = try await web.evaluateJavaScript("window.sent || 0") as? Int
+        XCTAssertEqual(sent, 0)
+    }
+    @MainActor func testToolCanBeReselectedAfterEditorRemountWithoutChangingPrompt() async throws {
+        let web = try await fixture(modernComposer)
+        defer { web.stopLoading() }
+        _ = try await call(web, "composeImage", payload: ["prompt":"Keep my prompt"])
+        _ = try await web.evaluateJavaScript("document.querySelector('[aria-label=\"이미지 생성 제거\"]').remove()")
+        _ = try await call(web, "ensureImageMode")
+        let text = try await web.evaluateJavaScript("document.querySelector('.ProseMirror').textContent") as? String
+        XCTAssertEqual(text, "Keep my prompt")
+        let sent = try await web.evaluateJavaScript("window.sent || 0") as? Int
+        XCTAssertEqual(sent, 0)
+    }
+}

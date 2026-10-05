@@ -30,18 +30,23 @@ if (operation === 'setReasoning') {
 }
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const plusButton = () => composerForm()?.querySelector('button[data-composer-navigation-target="add-context"],button[data-testid="composer-plus-btn"]');
-const toolPillSelector = '[data-system-hint-type="picture_v2"],[data-inline-selection-pill][data-id="picture_v2"]';
+const toolPillSelector = '[data-system-hint-type="picture_v2"],[data-inline-selection-pill][data-id="picture_v2"],[data-prompt-link-href="chatgpt-system-hint://picture_v2"]';
 const imageModeActive = () => !!composer()?.querySelector(toolPillSelector) ||
   Array.from(composerForm()?.querySelectorAll('button[aria-label]') || []).some(el =>
     !composer()?.contains(el) && /^(이미지 생성 제거|이미지 만들기 제거|Remove (?:Create image|Create images|Image generation))$/i.test(el.getAttribute('aria-label')));
 const writePrompt = (prompt, withPill) => {
   const el = composer();
   if (!el || el.tagName === 'TEXTAREA' || !el.isContentEditable) throw new Error('image-composer-unavailable');
+  // Native October composers put the selected tool inside the editor. Keep its
+  // actual schema when replacing text; deleting it can toggle the tool off.
+  const existingPill = el.querySelector(toolPillSelector)?.cloneNode(true);
   el.focus();
   const paragraphs = prompt.split('\n').map(line => {
     const p = document.createElement('p'); p.textContent = line; return p;
   });
-  if (withPill) {
+  if (existingPill) {
+    paragraphs[0].prepend(existingPill, document.createTextNode("\u00a0"));
+  } else if (withPill) {
     const pill = document.createElement('span');
     for (const [key, value] of Object.entries({
       contenteditable:'false', 'data-inline-selection-pill':'', 'data-id':'picture_v2',
@@ -71,7 +76,7 @@ const selectImageTool = async () => {
     if (item) { item.click(); break; }
     await delay(100);
   }
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 50; i++) {
     if (imageModeActive()) { await delay(250); if (imageModeActive()) return; }
     await delay(100);
   }
@@ -90,6 +95,12 @@ if (operation === 'composeImage') {
     await delay(150);
     await selectImageTool();
   }
+  if (!imageModeActive()) throw new Error('image-mode-not-applied');
+  return JSON.stringify({ok:true});
+}
+if (operation === 'ensureImageMode') {
+  await selectImageTool();
+  await delay(300);
   if (!imageModeActive()) throw new Error('image-mode-not-applied');
   return JSON.stringify({ok:true});
 }

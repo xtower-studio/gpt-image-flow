@@ -23,7 +23,7 @@ struct OnboardingView: View {
                     }
                 }
                 Spacer()
-                Text("DEAUM · 다음모양 배포\nDesigned & developed by xtower").font(.caption).foregroundStyle(.secondary).lineSpacing(4)
+                Text("DEAUM · 다음모양 배포\nDesigned & developed by xtower").font(StudioTypography.supporting).foregroundStyle(.secondary).lineSpacing(4)
                 Text("당신의 이미지와 작업 기록은\n당신의 폴더에 남습니다.").font(StudioTypography.supporting).foregroundStyle(.secondary).lineSpacing(4)
             }.padding(30).frame(width: 265).background(.quaternary.opacity(0.35))
             VStack(alignment: .leading, spacing: 22) {

@@ -37,11 +37,11 @@ struct ComposerInputCard: View {
     private var referenceStrip: some View {
         VStack(alignment: .leading, spacing: PanelSpacing.related) {
             HStack(spacing: 8) {
-                Image(systemName: "paperclip").font(.system(size: 12))
+                Image(systemName: "paperclip").font(.system(size: 14))
                 Text("참조 이미지").font(StudioTypography.control).foregroundStyle(.primary)
-                Text(references.isEmpty ? "선택 사항" : "\(references.count)개").font(StudioTypography.metadata).foregroundStyle(.secondary)
+                if !references.isEmpty { Text("\(references.count)개").font(StudioTypography.metadata).foregroundStyle(.secondary) }
                 Spacer(minLength: 0)
-                Button(action: add) { Image(systemName: "plus").font(.system(size: 12, weight: .medium)).frame(width: 24, height: 24).contentShape(Circle()) }
+                Button(action: add) { Image(systemName: "plus").font(.system(size: 14, weight: .medium)).frame(width: 32, height: 32).contentShape(Circle()) }
                     .buttonStyle(.plain).help("참조 이미지 추가 · ⌘O").accessibilityLabel("참조 이미지 추가")
             }.foregroundStyle(.secondary)
             if !references.isEmpty {
@@ -54,7 +54,7 @@ struct ComposerInputCard: View {
                                 .help(originalID == asset.id ? "수정 원본: \(asset.title)" : asset.title)
                                 .overlay(alignment: .topTrailing) {
                                     if originalID != asset.id {
-                                        Button { remove(asset.id) } label: { Image(systemName: "xmark.circle.fill").symbolRenderingMode(.palette).foregroundStyle(.white, .black.opacity(0.65)).font(.system(size: 15)) }
+                                        Button { remove(asset.id) } label: { Image(systemName: "xmark.circle.fill").symbolRenderingMode(.palette).foregroundStyle(.white, .black.opacity(0.65)).font(.system(size: 16)).frame(width: 28, height: 28).contentShape(Rectangle()) }
                                             .buttonStyle(.plain).padding(3).accessibilityLabel("\(asset.title) 참조 제거")
                                     }
                                 }
@@ -62,7 +62,7 @@ struct ComposerInputCard: View {
                     }
                 }
             } else {
-                Button("프롬프트에 이미지를 놓거나 추가하세요", action: add)
+                Button("이미지를 여기에 놓으세요", action: add)
                     .font(StudioTypography.supporting).foregroundStyle(.secondary).buttonStyle(.plain)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }

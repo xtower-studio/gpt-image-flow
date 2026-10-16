@@ -27,9 +27,9 @@ final class LibraryOrganizationTests: XCTestCase {
         try legacy.save(to: root)
         let migrated = try PortableLibrary.load(from: root).organized(in: root)
         try migrated.verifyFiles(in: root)
-        XCTAssertEqual(migrated.version, 2)
-        XCTAssertTrue(migrated.library.assets[0].relativePath!.contains("/References/"))
-        XCTAssertTrue(migrated.library.assets[1].relativePath!.contains("/Generated/"))
+        XCTAssertEqual(migrated.version, 3)
+        XCTAssertEqual(migrated.library.assets[0].relativePath!.split(separator: "/").count, 2)
+        XCTAssertEqual(migrated.library.assets[1].relativePath!.split(separator: "/").count, 2)
         XCTAssertEqual(migrated.journal.jobs[0].results[0].relativePath, migrated.library.assets[1].relativePath)
         XCTAssertEqual(migrated.library.projects[0].referenceIDs, [assets[0].id])
         XCTAssertFalse(fm.fileExists(atPath: root.appendingPathComponent("Originals").path))
@@ -55,14 +55,38 @@ final class LibraryOrganizationTests: XCTestCase {
         let conflict = Data("do not overwrite".utf8); try conflict.write(to: destination)
         asset.relativePath = nil
         var library = Library(); library.projects = [project]; library.assets = [asset]
-        XCTAssertThrowsError(try PortableLibrary(library: library, journal: QueueJournal()).organized(in: root))
-        XCTAssertEqual(try Data(contentsOf: source), bytes)
+        let result = try PortableLibrary(library: library, journal: QueueJournal()).organized(in: root)
+        XCTAssertEqual(try Data(contentsOf: AssetPaths.original(result.library.assets[0], in: root)), bytes)
         XCTAssertEqual(try Data(contentsOf: destination), conflict)
+    }
+    func testMovedV2OriginalIsRecoveredAndOnlyImagesRemainVisible() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let fm = FileManager.default, bytes = Data("verified original".utf8)
+        let project = Project(name: "제품")
+        var asset = Asset(projectID: project.id, filename: "old.png", title: "result", width: 1, height: 1, digest: AssetVault.hash(bytes), isReference: false)
+        let name = "result — \(asset.id).png"
+        asset.relativePath = "Projects/\(project.storageFolder!)/Generated/2026-10-01/\(name)"
+        let moved = root.appendingPathComponent("Projects/\(project.storageFolder!)/직접 정리/\(name)")
+        try fm.createDirectory(at: moved.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try bytes.write(to: moved)
+        var library = Library(); library.projects = [project]; library.assets = [asset]
+        var archive = PortableLibrary(library: library, journal: QueueJournal()); archive.version = 2
+        try archive.save(to: root)
+        let result = try archive.organized(in: root)
+        try result.verifyFiles(in: root)
+        let visibleRoot = try fm.contentsOfDirectory(at: root, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
+        XCTAssertEqual(visibleRoot.map(\.lastPathComponent), [project.storageFolder!])
+        let visibleProject = try fm.contentsOfDirectory(at: visibleRoot[0], includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
+        XCTAssertEqual(visibleProject.map(\.lastPathComponent), ["result.png"])
+        XCTAssertTrue(fm.fileExists(atPath: try AssetPaths.metadata(result.library.assets[0], in: root).path))
+        XCTAssertFalse(fm.fileExists(atPath: moved.path))
+        _ = try PortableLibrary.load(from: root).organized(in: root)
     }
     func testUnsafePathsAreRejectedAndProjectNamesDoNotCollide() throws {
         let root = FileManager.default.temporaryDirectory
         var asset = Asset(projectID: UUID(), filename: "safe.png", title: "Result", width: 1, height: 1, digest: "", isReference: false)
-        for path in ["Projects/../outside.png", "/tmp/out.png", "Projects//out.png", "Other/out.png"] {
+        for path in ["Projects/../outside.png", "/tmp/out.png", "Projects//out.png", ".imageflow/out.png"] {
             asset.relativePath = path
             XCTAssertThrowsError(try AssetPaths.original(asset, in: root))
         }

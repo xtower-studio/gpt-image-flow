@@ -13,7 +13,7 @@ struct GenerationPlaceholder: View {
                 FlowGenerationMark(active: job.state.isRunning).frame(width: compact ? 40 : 76, height: compact ? 40 : 76)
             }
             Text(job.state.label).font(compact ? StudioTypography.metadata : StudioTypography.control)
-            Text("\(ordinal) / \(job.expectedImageCount)").font(StudioTypography.metadata).monospacedDigit().foregroundStyle(.secondary)
+            Text(job.imageTitle(ordinal - 1)).font(StudioTypography.metadata).monospacedDigit().foregroundStyle(.secondary)
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.accentColor.opacity(0.035), in: RoundedRectangle(cornerRadius: 14))
             .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(Color.accentColor.opacity(0.2), style: StrokeStyle(lineWidth: 1, dash: [5, 5])) }
@@ -27,11 +27,7 @@ final class GenerationCollectionItem: NSCollectionViewItem {
     override func loadView() { view = NSView() }
     func render(job: Job, ordinal: Int, phase: ScenePhase, open: @escaping () -> Void) {
         let content = AnyView(Button(action: open) {
-            VStack(alignment: .leading, spacing: 8) {
-                GenerationPlaceholder(job: job, ordinal: ordinal).aspectRatio(1, contentMode: .fit)
-                Text("\(job.label) · \(ordinal)").font(StudioTypography.item).lineLimit(1)
-                Text(job.inputPrompt ?? job.prompt).font(StudioTypography.metadata).foregroundStyle(.secondary).lineLimit(1)
-            }.padding(3).contentShape(Rectangle())
+            GenerationPlaceholder(job: job, ordinal: ordinal).contentShape(Rectangle())
         }.buttonStyle(.plain).help("작업 상태와 응답 보기").environment(\.scenePhase, phase))
         if let host { host.rootView = content }
         else {

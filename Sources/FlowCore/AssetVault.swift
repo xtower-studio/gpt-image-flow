@@ -28,22 +28,25 @@ public actor AssetVault {
                           width: width, height: height, digest: Self.hash(bytes), isReference: isReference,
                           jobID: jobID, parentID: parentID)
         asset.generationMetadata = generationMetadata; asset.apiModel = apiModel
-        asset.relativePath = AssetPaths.relativePath(asset, folder: projectFolder ?? projectID.uuidString)
+        asset.relativePath = AssetPaths.availablePath(asset, folder: projectFolder ?? projectID.uuidString, root: root)
+        asset.filename = URL(fileURLWithPath: asset.relativePath!).lastPathComponent
+        asset.title = URL(fileURLWithPath: asset.filename).deletingPathExtension().lastPathComponent
         try FileManager.default.createDirectory(at: original(asset).deletingLastPathComponent(), withIntermediateDirectories: true)
-        for folder in ["Receipts"] {
+        for folder in [".imageflow/Receipts"] {
             try FileManager.default.createDirectory(at: root.appendingPathComponent(folder), withIntermediateDirectories: true)
         }
         try bytes.write(to: original(asset), options: .atomic)
         do {
-            try JSONEncoder().encode(asset).write(to: root.appendingPathComponent("Receipts/\(id).json"), options: .atomic)
+            try JSONEncoder().encode(asset).write(to: root.appendingPathComponent(".imageflow/Receipts/\(id).json"), options: .atomic)
         }
         return asset
     }
     public func updateReceipt(_ asset: Asset) throws {
-        try JSONEncoder().encode(asset).write(to: root.appendingPathComponent("Receipts/\(asset.id).json"), options: .atomic)
+        try JSONEncoder().encode(asset).write(to: root.appendingPathComponent(".imageflow/Receipts/\(asset.id).json"), options: .atomic)
     }
     public func receipts() throws -> [Asset] {
-        let directory = root.appendingPathComponent("Receipts")
+        let current = root.appendingPathComponent(".imageflow/Receipts")
+        let directory = FileManager.default.fileExists(atPath: current.path) ? current : root.appendingPathComponent("Receipts")
         guard FileManager.default.fileExists(atPath: directory.path) else { return [] }
         return try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension == "json" }.compactMap { url in

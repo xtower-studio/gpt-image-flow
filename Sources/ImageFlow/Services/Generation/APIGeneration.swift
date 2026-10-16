@@ -35,7 +35,7 @@ extension GenerationEngine {
     }
     private func saveAPIImage(_ data: Data, job: Job, index: Int, model: String) async throws {
         guard (store.jobs.first(where: { $0.id == job.id })?.results.count ?? 0) <= index else { return }
-        let asset = try await store.vault.store(data, projectID: job.projectID, title: "\(job.label) · \(index + 1)", isReference: false,
+        let asset = try await store.vault.store(data, projectID: job.projectID, title: job.imageTitle(index), isReference: false,
             jobID: job.id, parentID: job.parentID, apiModel: model, projectFolder: store.project(job.projectID)?.storageFolder)
         store.upsert(asset); store.placeResult(asset, job: job, index: index)
         try store.updateJob(job.id) { $0.results.append(asset) }

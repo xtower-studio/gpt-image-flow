@@ -25,6 +25,7 @@ public struct Asset: Codable, Identifiable, Equatable, Sendable {
     public var id: UUID
     public var projectID: UUID
     public var relativePath: String?
+    public var sequenceName: String?
     public var filename: String
     public var title: String
     public var width: Int
@@ -73,6 +74,7 @@ public enum JobState: String, Codable, CaseIterable, Sendable {
 
 public struct Job: Codable, Identifiable, Equatable, Sendable {
     public var id = UUID()
+    public var requestNumber: Int?
     public var batchID: UUID
     public var projectID: UUID
     public var prompt: String

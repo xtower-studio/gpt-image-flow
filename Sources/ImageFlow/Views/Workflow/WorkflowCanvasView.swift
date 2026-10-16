@@ -91,7 +91,7 @@ struct WorkflowCanvasView: View {
             }
             .overlay(alignment: .topTrailing) {
                 HStack(spacing: 5) {
-                    Text(node.outputPort == .prompt ? "프롬프트" : "이미지").font(.system(size: 10)).foregroundStyle(.secondary)
+                    Text(node.outputPort == .prompt ? "프롬프트" : "이미지").font(.system(size: 13)).foregroundStyle(.secondary)
                     Button { connecting = connecting == node.id ? nil : node.id; connectionPoint = nil } label: {
                         Circle().fill(portColor(node.outputPort)).frame(width: 14, height: 14)
                             .overlay { Circle().stroke(.background, lineWidth: 2) }
@@ -130,7 +130,7 @@ struct WorkflowCanvasView: View {
             } label: {
                 let count = graph.edges.filter { $0.target == node.id && $0.port == port }.count
                 Text((port == .prompt ? "공통 지시" : "참조") + (count == 0 ? " +" : " \(count)"))
-                    .font(.system(size: 10)).foregroundStyle(.secondary)
+                    .font(.system(size: 13)).foregroundStyle(.secondary)
             }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().disabled(busy)
         }.frame(height: 24)
     }

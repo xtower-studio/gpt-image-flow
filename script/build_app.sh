@@ -34,7 +34,7 @@ cat > "$TASK_BUNDLE/Contents/Info.plist" <<PLIST
 <key>CFBundleName</key><string>Image Flow</string>
 <key>CFBundleDisplayName</key><string>Image Flow</string>
 <key>CFBundleShortVersionString</key><string>$TASK_VERSION</string>
-<key>CFBundleVersion</key><string>12</string>
+<key>CFBundleVersion</key><string>13</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>

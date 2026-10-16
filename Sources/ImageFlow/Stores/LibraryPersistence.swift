@@ -15,8 +15,16 @@ import FlowCore
     let context: ModelContext
     init(root: URL) throws {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let hidden = root.appendingPathComponent(".imageflow")
+        try FileManager.default.createDirectory(at: hidden, withIntermediateDirectories: true)
+        if !FileManager.default.fileExists(atPath: hidden.appendingPathComponent("Library.store").path) {
+            for name in ["Library.store", "Library.store-wal", "Library.store-shm"] {
+                let old = root.appendingPathComponent(name)
+                if FileManager.default.fileExists(atPath: old.path) { try FileManager.default.copyItem(at: old, to: hidden.appendingPathComponent(name)) }
+            }
+        }
         container = try ModelContainer(for: LibraryRecord.self,
-            configurations: ModelConfiguration(url: root.appendingPathComponent("Library.store")))
+            configurations: ModelConfiguration(url: hidden.appendingPathComponent("Library.store")))
         context = ModelContext(container); context.autosaveEnabled = false
     }
     func load() throws -> Library {

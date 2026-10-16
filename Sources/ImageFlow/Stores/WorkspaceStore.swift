@@ -34,7 +34,7 @@ import FlowCore
         flush()
     }
     var jobs: [Job] { journal.jobs }
-    var journalURL: URL { root.appendingPathComponent("Jobs.json") }
+    var journalURL: URL { root.appendingPathComponent(PortableLibrary.journalFilename) }
 
     init() {
         let args = CommandLine.arguments
@@ -52,10 +52,11 @@ import FlowCore
             if UserDefaults.standard.string(forKey: "libraryFolderPath") != nil, !args.contains("--data-directory"), !FileManager.default.fileExists(atPath: root.path) {
                 throw FlowError.message("선택한 저장 폴더를 찾을 수 없습니다. 드라이브를 연결하거나 설정에서 보관함을 다시 열어 주세요.")
             }
-            let archive = FileManager.default.fileExists(atPath: root.appendingPathComponent(PortableLibrary.filename).path) ? try PortableLibrary.load(from: root) : nil
+            let archive = FileManager.default.fileExists(atPath: PortableLibrary.manifestURL(in: root).path) ? try PortableLibrary.load(from: root) : nil
             let persistence = try LibraryPersistence(root: root)
             self.persistence = persistence; library = try archive?.library ?? persistence.load()
-            journal = FileManager.default.fileExists(atPath: journalURL.path) ? try QueueJournal.load(journalURL) : archive?.journal ?? QueueJournal()
+            let existingJournal = FileManager.default.fileExists(atPath: journalURL.path) ? journalURL : root.appendingPathComponent("Jobs.json")
+            journal = FileManager.default.fileExists(atPath: existingJournal.path) ? try QueueJournal.load(existingJournal) : archive?.journal ?? QueueJournal()
             journal.jobs = journal.jobs.map(JobRules.recovered)
             for index in (journal.workflowRuns ?? []).indices where journal.workflowRuns?[index].state == .running {
                 journal.workflowRuns?[index].state = .paused
@@ -65,7 +66,6 @@ import FlowCore
             if library.projects.isEmpty { library.projects = [Project(name: "첫 프로젝트")] }
             library.restoreMissingAssets(journal.jobs.flatMap(\.results))
             storageReady = true
-            try persist()
             Task {
                 defer { restoringAssets = false }
                 do {
@@ -79,19 +79,20 @@ import FlowCore
                     let organized = try await Task.detached(priority: .utility) { try snapshot.organized(in: directory) }.value
                     library = organized.library; journal = organized.journal
                     try persist()
-                } catch { report(error) }
+                } catch { storageReady = false; report(error) }
             }
         } catch { restoringAssets = false; storageReady = false; errorMessage = "저장 공간을 열 수 없습니다. 원본 데이터를 보존했습니다.\n" + error.localizedDescription }
     }
     func persist() throws {
         guard storageReady, let persistence else { throw FlowError.message("저장 공간을 확인해 주세요.") }
         do {
+            AssetNaming.number(&journal.jobs)
             try journal.save(journalURL)
             try PortableLibrary(library: library, journal: journal).save(to: root)
             try persistence.save(library)
         } catch { storageReady = false; journal.paused = true; throw error }
     }
-    func flush() { draftSave?.cancel(); do { try persist() } catch { report(error) } }
+    func flush() { guard !restoringAssets else { return }; draftSave?.cancel(); do { try persist() } catch { report(error) } }
     func report(_ error: Error) { errorMessage = error.localizedDescription }
     func project(_ id: UUID?) -> Project? { library.projects.first { $0.id == id } }
     func asset(_ id: UUID) -> Asset? { library.assets.first { $0.id == id } }

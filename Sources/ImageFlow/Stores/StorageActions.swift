@@ -6,7 +6,7 @@ extension WorkspaceStore {
     static var legacyStorage: URL { FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("ImageFlow", isDirectory: true) }
     static func initialStorageLocation() -> URL {
         if let path = UserDefaults.standard.string(forKey: "libraryFolderPath") { return URL(fileURLWithPath: path, isDirectory: true) }
-        if FileManager.default.fileExists(atPath: legacyStorage.appendingPathComponent("Library.store").path) { return legacyStorage }
+        if FileManager.default.fileExists(atPath: PortableLibrary.manifestURL(in: legacyStorage).path) || FileManager.default.fileExists(atPath: legacyStorage.appendingPathComponent("Library.store").path) { return legacyStorage }
         return recommendedStorage
     }
     var canChangeStorage: Bool { !changingStorage && !importing && !restoringAssets && !jobs.contains { $0.state.isRunning } }
@@ -15,7 +15,7 @@ extension WorkspaceStore {
         let panel = NSOpenPanel(); panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.canCreateDirectories = !openExisting
         panel.directoryURL = root.deletingLastPathComponent()
         panel.prompt = openExisting ? "보관함 열기" : "이 폴더로 이동"
-        panel.message = openExisting ? "ImageFlow.library.json이 들어 있는 보관함 폴더를 선택하세요." : "비어 있는 폴더를 선택하세요. 원본·첨부·작업 기록을 복사하고 기존 폴더는 보존합니다."
+        panel.message = openExisting ? "프로젝트 폴더들을 포함한 Image Flow 보관함 폴더를 선택하세요." : "비어 있는 폴더를 선택하세요. 원본·첨부·작업 기록을 복사하고 기존 폴더는 보존합니다."
         guard panel.runModal() == .OK, let url = panel.url else { return }
         Task { do { try await changeStorage(to: url, openExisting: openExisting) } catch { report(error) } }
     }
@@ -49,7 +49,7 @@ extension WorkspaceStore {
             restored = try await Task.detached { try snapshot.organized(in: destination) }.value
             let next = try LibraryPersistence(root: destination)
             try next.save(restored.library)
-            try restored.journal.save(destination.appendingPathComponent("Jobs.json"))
+            try restored.journal.save(destination.appendingPathComponent(PortableLibrary.journalFilename))
             try restored.save(to: destination)
             storageAccess?.stopAccessingSecurityScopedResource(); storageAccess = access ? destination : nil; adopted = true
             root = destination; vault = AssetVault(root: destination); persistence = next

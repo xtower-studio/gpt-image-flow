@@ -40,7 +40,7 @@ struct ComposerView: View {
                         HStack {
                             PanelSectionHeading(title: editing == nil ? "프롬프트" : "수정할 내용")
                             if editing != nil {
-                                Button { editing = nil } label: { Image(systemName: "xmark").font(.system(size: 11, weight: .medium)) }.buttonStyle(.borderless).help("수정 모드 닫기")
+                                Button { editing = nil } label: { Image(systemName: "xmark").font(.system(size: 14, weight: .medium)).frame(width: 32, height: 32) }.buttonStyle(.borderless).help("수정 모드 닫기")
                             } else { recipes }
                         }
                         ComposerInputCard(text: prompt, references: references, originalID: editing?.id, focusRequest: focusRequest,
@@ -69,20 +69,14 @@ struct ComposerView: View {
             }.panelScrollEdges()
             VStack(spacing: 12) {
                 if isAPI { APICostView(options: apiOptions.wrappedValue, requests: count) }
-                HStack {
-                    Text("총 \(totalImages)장").font(StudioTypography.section)
-                    Spacer()
-                    Text("\(count)회 요청 × \(imagesPerRequest)장").font(StudioTypography.metadata).foregroundStyle(.secondary)
-                }.monospacedDigit().accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(count)회 요청 × \(imagesPerRequest)장 = 총 \(totalImages)장").accessibilityIdentifier("generation-total")
                 Button { if isAPI && !store.apiConnection.ready { showAPIConnection = true } else { generate() } } label: {
-                    HStack { Image(systemName: "sparkles"); Text(isAPI ? (store.apiConnection.ready ? "\(totalImages)장 생성 · API 유료" : "API 연결하기") : editing == nil ? "\(totalImages)개 이미지 생성" : "\(totalImages)개 수정본 생성").font(StudioTypography.action); Spacer(); Text("⌘↵").font(StudioTypography.metadata).opacity(0.65) }.frame(maxWidth: .infinity).padding(.vertical, 5)
+                    HStack { Image(systemName: "sparkles"); Text(isAPI ? (store.apiConnection.ready ? "\(totalImages)장 생성 · API 유료" : "API 연결하기") : editing == nil ? "\(totalImages)개 이미지 생성" : "\(totalImages)개 수정본 생성").font(StudioTypography.action); Spacer() }.frame(maxWidth: .infinity).padding(.vertical, 5)
                 }.studioActionButton(prominent: true).buttonBorderShape(.capsule).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(!canGenerate && !(isAPI && !store.apiConnection.ready))
                 HStack(spacing: 5) {
                     if store.importing { ProgressView().controlSize(.mini); Text("참조 이미지 가져오는 중…") }
                     else if store.journal.paused { Image(systemName: "pause.circle"); Text("대기열 일시정지 · 작업 탭에서 계속") }
                     else if isAPI { Image(systemName: "creditcard"); Text("OpenAI 청구 · 앱 수수료 없음") }
-                    else { Image(systemName: engine.eco ? "leaf" : "square.stack.3d.up"); Text(engine.eco ? "절전 모드 · 요청 1개씩 실행" : "최대 3개 요청 동시 실행") }
+                    else if engine.eco { Label("절전 모드", systemImage: "leaf") }
                 }.font(StudioTypography.metadata).foregroundStyle(.secondary)
             }.padding(.horizontal, PanelSpacing.inset).padding(.top, 16).padding(.bottom, 16)
         }
@@ -102,7 +96,7 @@ struct ComposerView: View {
         if let editing { request.prompt = editPrompt; request.variations = ""; request.copies = 1; request.referenceIDs = [editing.id] + current.referenceIDs.filter { $0 != editing.id } }
         do {
             try store.enqueue(project: request, parentID: editing?.id)
-            store.notice = "\(count)회 요청 · 총 \(totalImages)장 생성을 추가했습니다. 작업 탭에서 진행 상태를 확인할 수 있습니다."
+            store.notice = "\(count)회 요청 · 총 \(totalImages)장 생성을 추가했습니다."
             if !isAPI && session.status != .ready { session.connect() }
             if editing != nil { editPrompt = ""; editing = nil }
         } catch { store.report(error) }

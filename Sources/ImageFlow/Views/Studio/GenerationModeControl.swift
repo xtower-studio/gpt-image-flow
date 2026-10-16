@@ -22,13 +22,13 @@ struct GenerationModeControl: View {
                                     Spacer(minLength: 0)
 
                                 }
-                                Text(description(mode)).font(StudioTypography.supporting).foregroundStyle(.secondary).lineSpacing(0).fixedSize(horizontal: false, vertical: true)
+                                if selection == mode { Text(description(mode)).font(StudioTypography.supporting).foregroundStyle(.secondary).lineSpacing(0).fixedSize(horizontal: false, vertical: true) }
                             }
                         }.padding(.horizontal, 10).padding(.vertical, 8).frame(maxWidth: .infinity, alignment: .leading)
                             .background(selection == mode ? Color.accentColor.opacity(0.065) : .clear, in: RoundedRectangle(cornerRadius: 9))
                             .contentShape(RoundedRectangle(cornerRadius: 9))
                     }.buttonStyle(.plain).disabled(mode == .sunburstAPI && !allowsAPI).accessibilityLabel(mode.label).accessibilityValue(selection == mode ? "선택됨" : "")
-                        .accessibilityHint(mode.explanation).accessibilityIdentifier("generation-mode-\(mode.rawValue)")
+                        .help(description(mode)).accessibilityHint(mode.explanation).accessibilityIdentifier("generation-mode-\(mode.rawValue)")
                 }
             }.padding(4).frame(maxWidth: .infinity).panelSurface(radius: 12)
         }

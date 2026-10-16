@@ -159,7 +159,7 @@ import FlowCore
                     let bytes = try await worker.bytes(for: image)
                     let digest = AssetVault.hash(bytes)
                     if existing.contains(where: { $0.generationMetadata == nil && $0.digest == digest }) { continue }
-                    let title = job.expectedImageCount > 1 || candidates.count > 1 ? "\(job.label) · \(index + 1)" : job.label
+                    let title = job.imageTitle(index)
                     let evidence = byFile[image.fileID] ?? ImageGenerationMetadata(fileID: image.fileID, messageID: image.responseID, genSize: nil, genSizeV2: nil)
                     let asset = try await store.vault.store(bytes, projectID: job.projectID, title: title,
                         isReference: false, jobID: job.id, parentID: job.parentID, generationMetadata: evidence, projectFolder: store.project(job.projectID)?.storageFolder)

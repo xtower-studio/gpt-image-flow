@@ -42,7 +42,6 @@ struct APIOptionsView: View {
                 OutputQuantityRow(title: "요청 횟수", value: $requests, maximum: 50, locked: countLocked)
             }.padding(.vertical, 4).frame(maxWidth: .infinity).panelSurface(radius: 12)
             Button { advanced = true } label: { Label("모든 API 옵션…", systemImage: "slider.horizontal.3") }.buttonStyle(.borderless).font(StudioTypography.control)
-            APIBillingNotice().padding(.top, 4)
         }.sheet(isPresented: $advanced) { APIAdvancedView(options: $options, projectID: projectID, references: references) }
             .sheet(isPresented: $connect) { APIConnectionView() }
     }

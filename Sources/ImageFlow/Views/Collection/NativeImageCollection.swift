@@ -47,7 +47,8 @@ struct NativeImageCollection: NSViewRepresentable {
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         let coordinator = context.coordinator
         let nextSlots = slots
-        let changed = coordinator.slots != nextSlots || coordinator.phase != scenePhase
+        let changed = coordinator.slots != nextSlots
+        let phaseChanged = coordinator.phase != scenePhase
         coordinator.parent = self; coordinator.slots = nextSlots; coordinator.phase = scenePhase
         guard let collection = scroll.documentView as? ImageCollectionView else { return }
         configure(collection, coordinator: coordinator)
@@ -58,6 +59,13 @@ struct NativeImageCollection: NSViewRepresentable {
         if selectionChanged { collection.selectionIndexPaths = indexes }
         if changed || selectionChanged {
             for item in collection.visibleItems() { if let item = item as? ImageCollectionItem, let path = collection.indexPath(for: item) { coordinator.configure(item, at: path) } }
+        }
+        if phaseChanged {
+            for case let item as GenerationCollectionItem in collection.visibleItems() {
+                if let path = collection.indexPath(for: item), nextSlots.indices.contains(path.item), let job = nextSlots[path.item].job {
+                    item.render(job: job, ordinal: nextSlots[path.item].ordinal, phase: scenePhase) { coordinator.parent.openJob(job) }
+                }
+            }
         }
         coordinator.applying = false
     }
@@ -92,7 +100,7 @@ struct NativeImageCollection: NSViewRepresentable {
                 collection.window?.makeFirstResponder(collection); self.changed()
             }
             item.render(asset: asset, store: parent.store, selected: collection?.selectionIndexPaths.contains(path) == true,
-                        edit: { [weak self] in self?.parent.edit(asset) }, attach: { [weak self] in self?.parent.attach(asset) })
+                        edit: { [weak self] in self?.parent.edit(asset) }, attach: { [weak self] in self?.parent.attach(asset) }, rename: { [weak self] in self?.parent.rename(asset) })
         }
         func collectionView(_ collectionView: NSCollectionView, shouldSelectItemsAt indexPaths: Set<IndexPath>) -> Set<IndexPath> {
             Set(indexPaths.filter { slots.indices.contains($0.item) && slots[$0.item].asset != nil })
@@ -161,9 +169,9 @@ final class ImageCollectionView: NSCollectionView {
             let target = available < 470 ? min(preferredSize, 180) : preferredSize
             let count = max(1, floor((available + 18) / (target + 18)))
             let width = floor((available - (count - 1) * 18) / count)
-            let size = NSSize(width: width, height: width + 56)
+            let size = NSSize(width: width, height: width)
             if layout.itemSize != size {
-                layout.itemSize = size; layout.minimumInteritemSpacing = 18; layout.minimumLineSpacing = 22
+                layout.itemSize = size; layout.minimumInteritemSpacing = 18; layout.minimumLineSpacing = 18
                 layout.sectionInset = NSEdgeInsets(top: 20, left: 20, bottom: 24, right: 20); layout.invalidateLayout()
             }
         }
@@ -195,8 +203,8 @@ final class ImageCollectionItem: NSCollectionViewItem {
     required init?(coder: NSCoder) { super.init(coder: coder) }
     var select: (() -> Void)? { didSet { (view as? CollectionItemContainer)?.select = select } }
     override func loadView() { view = CollectionItemContainer(); view.setAccessibilityElement(true); view.setAccessibilityRole(.button) }
-    func render(asset: Asset, store: WorkspaceStore, selected: Bool, edit: @escaping () -> Void, attach: @escaping () -> Void) {
-        let content = CollectionImageCell(asset: asset, store: store, selected: selected, edit: edit, attach: attach)
+    func render(asset: Asset, store: WorkspaceStore, selected: Bool, edit: @escaping () -> Void, attach: @escaping () -> Void, rename: @escaping () -> Void) {
+        let content = CollectionImageCell(asset: asset, store: store, selected: selected, edit: edit, attach: attach, rename: rename)
         if let host { host.rootView = content }
         else {
             let host = CollectionHostingView(rootView: content); host.translatesAutoresizingMaskIntoConstraints = false
@@ -214,44 +222,21 @@ struct CollectionImageCell: View {
     let selected: Bool
     var edit: () -> Void
     var attach: () -> Void
-    @State private var hovered = false
+    var rename: () -> Void
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            GeometryReader { geometry in
-                AssetPreview(url: store.vault.original(asset)).frame(width: geometry.size.width, height: geometry.size.height)
-            }.aspectRatio(1, contentMode: .fit)
-                .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
-                .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(selected ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: selected ? 2 : 1) }
-                .overlay(alignment: .topLeading) {
-                    if asset.isReference { Label("참조", systemImage: "paperclip").font(StudioTypography.metadata).padding(6).background(.regularMaterial, in: Capsule()).padding(8) }
-                }
-                .overlay(alignment: .topTrailing) {
-                    if asset.isFavorite { Image(systemName: "star.fill").font(.system(size: 11, weight: .semibold)).foregroundStyle(.white).padding(7).background(.black.opacity(0.65), in: Circle()).padding(8) }
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-            HStack(alignment: .center, spacing: 6) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(asset.title).font(StudioTypography.item).lineLimit(1).foregroundStyle(selected ? Color.accentColor : .primary)
-                    Text(asset.displayDetails).font(StudioTypography.metadata).foregroundStyle(.secondary).lineLimit(1)
-                }
-                Spacer(minLength: 0)
-                if hovered || selected {
-                    Button(action: attach) { Image(systemName: "paperclip") }.help("참조에 추가").accessibilityLabel("참조에 추가")
-                    Button(action: edit) { Image(systemName: "slider.horizontal.3") }.help("이 이미지 수정").accessibilityLabel("이 이미지 수정")
-                }
-                Button { store.toggleFavorite(asset) } label: { Image(systemName: asset.isFavorite ? "star.fill" : "star") }.help("후보 표시 · F").accessibilityLabel("후보 표시")
-            }.buttonStyle(.borderless).font(.system(size: 12)).padding(.horizontal, 3)
-        }.padding(3).onHover { hovered = $0 }
+        ImageCardSurface(asset: asset, store: store, selected: selected, edit: edit, attach: attach, rename: rename)
     }
 }
 
-/// Keep the image surface in the collection's responder chain; only the footer
-/// buttons need SwiftUI hit testing. This preserves AppKit selection and dragging.
+/// Only overlay controls consume SwiftUI events. The image itself retains native
+/// collection selection, multi-selection and dragging.
 final class CollectionHostingView: NSHostingView<CollectionImageCell> {
     override func hitTest(_ point: NSPoint) -> NSView? {
         let local = convert(point, from: superview)
-        let footerY = isFlipped ? local.y : bounds.height - local.y
-        guard footerY > bounds.width + 4 && local.x > bounds.width - 98 else { return nil }
+        let y = isFlipped ? local.y : bounds.height - local.y
+        let tools = y < 44 && local.x >= bounds.width - 82
+        let name = y >= bounds.height - 36
+        guard tools || name else { return nil }
         return super.hitTest(point)
     }
 }

@@ -23,16 +23,16 @@ struct BrandCredits: View {
             HStack(spacing: 14) {
                 brandImage("deaum", width: 58, height: 42)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("배포 · 비영리단체").font(.caption).foregroundStyle(.secondary)
+                    Text("배포 · 비영리단체").font(StudioTypography.supporting).foregroundStyle(.secondary)
                     Link("DEAUM · 다음모양", destination: URL(string: "https://deaum.org")!)
-                    Text("Daeummoyang").font(.caption).foregroundStyle(.secondary)
+                    Text("Daeummoyang").font(StudioTypography.supporting).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
             }
             HStack(spacing: 14) {
                 brandImage("xtower", width: 58, height: 28).padding(.vertical, 7)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("디자인 및 개발").font(.caption).foregroundStyle(.secondary)
+                    Text("디자인 및 개발").font(StudioTypography.supporting).foregroundStyle(.secondary)
                     Link("xtower", destination: URL(string: "https://xtower.studio")!)
                 }
                 Spacer(minLength: 0)

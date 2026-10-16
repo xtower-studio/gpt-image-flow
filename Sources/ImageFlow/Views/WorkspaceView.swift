@@ -60,7 +60,7 @@ struct WorkspaceView: View {
             }
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
             .navigationTitle(project?.name ?? "프로젝트")
-            .navigationSubtitle("\(allAssets.count)개 이미지")
+
             .searchable(text: $query, isPresented: $searchPresented, placement: .toolbar, prompt: "이미지 검색")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -89,7 +89,7 @@ struct WorkspaceView: View {
         }
         .focusedSceneValue(\.studioActions, actions)
         .sheet(isPresented: Binding(get: { comparison != nil }, set: { if !$0 { comparison = nil } })) {
-            if let comparison { CompareView(assets: comparison).environment(store) }
+            if let comparison { CompareView(assets: comparison, navigationAssets: assets).environment(store) }
         }
         .sheet(isPresented: $showHelp) { StudioHelpView() }
         .alert("이름 변경", isPresented: Binding(get: { renameTarget != nil }, set: { if !$0 { renameTarget = nil } })) {
@@ -125,7 +125,7 @@ struct WorkspaceView: View {
             } else if ProjectImageSlot.make(assets: assets, jobs: collectionJobs).isEmpty {
                 EmptyStudioView(filtered: favoritesOnly || !query.isEmpty, running: projectJobs.contains { $0.state.isRunning || $0.state == .queued }, create: startCreate, importImages: { store.selectImages(projectID: project.id) }, clear: { query = ""; favoritesOnly = false })
             } else {
-                NativeImageCollection(assets: assets, jobs: collectionJobs, openJob: openJob, store: store, cardSize: cardSize, selection: $selection, preview: { comparison = Array($0.prefix(4)) }, edit: beginEdit, inspect: { panel = .details; panelVisible = true }, attach: { store.attach($0, to: project.id); panel = .create; panelVisible = true }, rename: renameAsset, hide: hideAssets)
+                NativeImageCollection(assets: assets, jobs: collectionJobs, openJob: openJob, store: store, cardSize: cardSize, selection: $selection, preview: { comparison = Array($0.prefix(1)) }, edit: beginEdit, inspect: { panel = .details; panelVisible = true }, attach: { store.attach($0, to: project.id); panel = .create; panelVisible = true }, rename: renameAsset, hide: hideAssets)
             }
         }.frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity).background(StudioPalette.stage)
     }
@@ -176,7 +176,7 @@ struct WorkspaceView: View {
             Spacer(minLength: 0)
             if boardMode == "grid" {
                 HStack(spacing: 10) {
-                    Image(systemName: "photo").font(.system(size: 10)).foregroundStyle(.secondary)
+                    Image(systemName: "photo").font(.system(size: 13)).foregroundStyle(.secondary)
                     Slider(value: $cardSize, in: 170...320).frame(width: 80).controlSize(.small).accessibilityLabel("이미지 크기")
                     Image(systemName: "photo").font(.system(size: 15)).foregroundStyle(.secondary)
                 }.padding(.horizontal, 14).frame(height: 36).studioGlass()
@@ -194,7 +194,7 @@ struct WorkspaceView: View {
         }
     }
     private var actions: StudioActions {
-        StudioActions(selectedCount: selectedAssets.count, search: { searchPresented = true }, inspect: { panel = .details; panelVisible = true }, newProject: newProject, importImages: { if let project { store.selectImages(projectID: project.id) } }, preview: { if !selectedAssets.isEmpty { comparison = Array(selectedAssets.prefix(4)) } }, compare: { comparison = selectedAssets }, edit: { if let first = selectedAssets.first { beginEdit(first) } }, export: { store.export(selectedAssets) }, favorite: { for asset in selectedAssets { store.toggleFavorite(asset) } }, hide: { hideAssets(selectedAssets) }, rename: { if let asset = selectedAssets.first { renameAsset(asset) } }, showGrid: { boardMode = "grid" }, showCanvas: { boardMode = "canvas" }, toggleInspector: { panelVisible.toggle() }, create: startCreate, showHelp: { showHelp = true })
+        StudioActions(selectedCount: selectedAssets.count, search: { searchPresented = true }, inspect: { panel = .details; panelVisible = true }, newProject: newProject, importImages: { if let project { store.selectImages(projectID: project.id) } }, preview: { if !selectedAssets.isEmpty { comparison = Array(selectedAssets.prefix(1)) } }, compare: { comparison = selectedAssets }, edit: { if let first = selectedAssets.first { beginEdit(first) } }, export: { store.export(selectedAssets) }, favorite: { for asset in selectedAssets { store.toggleFavorite(asset) } }, hide: { hideAssets(selectedAssets) }, rename: { if let asset = selectedAssets.first { renameAsset(asset) } }, showGrid: { boardMode = "grid" }, showCanvas: { boardMode = "canvas" }, toggleInspector: { panelVisible.toggle() }, create: startCreate, showHelp: { showHelp = true })
     }
     private func matches(_ asset: Asset) -> Bool { (!favoritesOnly || asset.isFavorite) && (query.isEmpty || asset.title.localizedCaseInsensitiveContains(query) || store.jobs.first(where: { $0.id == asset.jobID })?.prompt.localizedCaseInsensitiveContains(query) == true) }
     private func canvasAssets(_ project: Project) -> [Asset] { store.library.assets.filter { ($0.projectID == project.id || project.referenceIDs.contains($0.id)) && !(store.library.hiddenAssetIDs ?? []).contains($0.id) && matches($0) } }
@@ -208,7 +208,7 @@ struct WorkspaceView: View {
         let name = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty, let target = renameTarget else { return }
         switch target { case .project(var project): project.name = name; store.updateProject(project)
-        case .asset(var asset): asset.title = name; store.upsert(asset); store.flush() }
+        case .asset(let asset): store.renameImage(asset, to: name) }
         renameTarget = nil
     }
     private func hideAssets(_ assets: [Asset]) {

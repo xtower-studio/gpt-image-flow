@@ -17,7 +17,7 @@ struct StudioIconButton: View {
     var active = false
     var action: () -> Void
     var body: some View {
-        Button(action: action) { Image(systemName: symbol).font(.system(size: 12, weight: .medium)).frame(width: 28, height: 28) }
+        Button(action: action) { Image(systemName: symbol).font(.system(size: 16, weight: .medium)).frame(width: 32, height: 32) }
             .buttonStyle(QuietButtonStyle(active: active)).help(label).accessibilityLabel(label)
     }
 }

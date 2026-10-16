@@ -13,7 +13,7 @@ struct InspectorView: View {
                 VStack(alignment: .leading, spacing: PanelSpacing.section) {
                     VStack(alignment: .leading, spacing: 12) {
                         AssetPreview(url: store.vault.original(asset)).frame(height: 180).frame(maxWidth: .infinity)
-                            .background(StudioPalette.stage, in: RoundedRectangle(cornerRadius: 18)).clipShape(RoundedRectangle(cornerRadius: 18))
+                            .studioContainer()
                         Text(asset.title).font(StudioTypography.title).textSelection(.enabled)
                         HStack {
                             Text("\(asset.width) × \(asset.height)")
@@ -29,7 +29,7 @@ struct InspectorView: View {
                             VStack(alignment: .leading, spacing: 14) {
                                 Text(job.inputPrompt ?? job.prompt).font(StudioTypography.body).lineSpacing(StudioTypography.lineSpacing).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
                                 Button { reuse(job) } label: { Label("이 설정 다시 사용", systemImage: "arrow.counterclockwise") }.font(StudioTypography.control).buttonStyle(.borderless)
-                            }.padding(14).panelSurface()
+                            }.padding(16).panelSurface()
                         }
                         if !job.referenceIDs.isEmpty {
                             VStack(alignment: .leading, spacing: PanelSpacing.heading) {
@@ -48,7 +48,7 @@ struct InspectorView: View {
                                 detail("생성 방식", job.requestModeLabel)
                                 detail("생성일", asset.createdAt.formatted(date: .abbreviated, time: .shortened))
                                 if let model = asset.apiModel { detail("API 모델 ID", model) }
-                            }.padding(14).panelSurface()
+                            }.padding(16).panelSurface()
                         }
                         if let url = job.conversationURL { Link(destination: url) { Label("ChatGPT 대화 열기", systemImage: "arrow.up.right") }.font(StudioTypography.control) }
                     }
@@ -63,7 +63,7 @@ struct InspectorView: View {
                         Spacer(minLength: 0)
                         Button { store.export([asset]) } label: { Image(systemName: "square.and.arrow.up") }.help("내보내기").accessibilityLabel("내보내기")
                         Button { NSWorkspace.shared.activateFileViewerSelecting([store.vault.original(asset)]) } label: { Image(systemName: "folder") }.help("Finder에서 보기").accessibilityLabel("Finder에서 보기")
-                    }.buttonStyle(.borderless).font(StudioTypography.supporting).padding(14).panelSurface()
+                    }.buttonStyle(.borderless).font(StudioTypography.supporting).padding(16).panelSurface()
                 }.padding(.horizontal, PanelSpacing.inset).padding(.top, PanelSpacing.top).padding(.bottom, PanelSpacing.section)
             } else {
                 ContentUnavailableView("이미지를 선택하세요", systemImage: "photo", description: Text("프롬프트와 생성 정보를 확인하고\n다음 이미지로 이어갈 수 있습니다."))

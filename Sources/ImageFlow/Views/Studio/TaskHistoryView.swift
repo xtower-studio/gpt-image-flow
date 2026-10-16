@@ -22,8 +22,7 @@ struct TaskHistoryView: View {
             else if jobs.isEmpty {
                 ContentUnavailableView("아직 작업이 없습니다", systemImage: "clock", description: Text("생성한 이미지와 답변을 여기에서 확인할 수 있습니다."))
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 8) {
+                List {
                         ForEach(jobs) { job in
                             Button { selectedJobID = job.id } label: {
                                 HStack(alignment: .top, spacing: 12) {
@@ -34,11 +33,10 @@ struct TaskHistoryView: View {
                                         Text("\(job.state.label) · \(job.results.count)/\(job.expectedImageCount)장").font(StudioTypography.metadata).foregroundStyle(job.state == .failed ? Color.orange : .secondary)
                                         Text(job.responseText ?? job.error ?? job.inputPrompt ?? job.prompt).font(StudioTypography.supporting).foregroundStyle(.secondary).lineLimit(2).multilineTextAlignment(.leading)
                                     }
-                                }.contentShape(Rectangle()).padding(PanelSpacing.card).panelSurface(radius: 16)
+                                }.contentShape(Rectangle()).padding(.vertical, 8)
                             }.buttonStyle(.plain)
                         }
-                    }.padding(.horizontal, PanelSpacing.inset).padding(.bottom, 16)
-                }.panelScrollEdges()
+                }.listStyle(.inset).scrollContentBackground(.hidden).panelScrollEdges()
             }
         }
     }

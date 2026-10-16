@@ -63,22 +63,22 @@ struct ComposerView: View {
                             TextEditor(text: binding(\.variations)).font(StudioTypography.body).scrollContentBackground(.hidden)
                                 .frame(height: 90).padding(10).panelSurface(radius: 14, editor: true).accessibilityLabel("요청별 변형 입력")
                         }.padding(.top, 12)
-                    } label: { Text("요청별 변형").font(StudioTypography.control) }
+                    } label: { Label("요청별 변형", systemImage: "text.badge.plus").font(StudioTypography.control) }
                     .disabled(editing != nil)
                 }.padding(.horizontal, PanelSpacing.inset).padding(.top, PanelSpacing.top).padding(.bottom, PanelSpacing.section)
             }.panelScrollEdges()
             VStack(spacing: 12) {
                 if isAPI { APICostView(options: apiOptions.wrappedValue, requests: count) }
                 Button { if isAPI && !store.apiConnection.ready { showAPIConnection = true } else { generate() } } label: {
-                    HStack { Image(systemName: "sparkles"); Text(isAPI ? (store.apiConnection.ready ? "\(totalImages)장 생성 · API 유료" : "API 연결하기") : editing == nil ? "\(totalImages)개 이미지 생성" : "\(totalImages)개 수정본 생성").font(StudioTypography.action); Spacer() }.frame(maxWidth: .infinity).padding(.vertical, 5)
+                    HStack(spacing: 8) { Image(systemName: "sparkles"); Text(isAPI ? (store.apiConnection.ready ? "\(totalImages)장 생성 · API 유료" : "API 연결하기") : editing == nil ? "\(totalImages)개 이미지 생성" : "\(totalImages)개 수정본 생성").font(StudioTypography.action) }.frame(maxWidth: .infinity).padding(.vertical, 6)
                 }.studioActionButton(prominent: true).buttonBorderShape(.capsule).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(!canGenerate && !(isAPI && !store.apiConnection.ready))
                 HStack(spacing: 5) {
                     if store.importing { ProgressView().controlSize(.mini); Text("참조 이미지 가져오는 중…") }
-                    else if store.journal.paused { Image(systemName: "pause.circle"); Text("대기열 일시정지 · 작업 탭에서 계속") }
                     else if isAPI { Image(systemName: "creditcard"); Text("OpenAI 청구 · 앱 수수료 없음") }
+                    else if store.journal.paused { Image(systemName: "pause.circle"); Text("대기열 일시정지 · 작업 탭에서 계속") }
                     else if engine.eco { Label("절전 모드", systemImage: "leaf") }
                 }.font(StudioTypography.metadata).foregroundStyle(.secondary)
-            }.padding(.horizontal, PanelSpacing.inset).padding(.top, 16).padding(.bottom, 16)
+            }.padding(.horizontal, PanelSpacing.inset).padding(.top, 12).padding(.bottom, 20)
         }
         .sheet(isPresented: $showAPIConnection) { APIConnectionView() }
         .onChange(of: store.selectedGenerationMode) { _, mode in if mode == .sunburstAPI && !store.apiConnection.ready { showAPIConnection = true } }

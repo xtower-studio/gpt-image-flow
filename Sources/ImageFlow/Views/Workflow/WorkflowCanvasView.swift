@@ -31,7 +31,7 @@ struct WorkflowCanvasView: View {
     var body: some View {
         if legacy {
             FreeCanvasView(project: project, assets: assets, jobs: jobs, selection: $selection, preview: preview, edit: edit, openJob: openJob)
-                .overlay(alignment: .topLeading) { Button("노드 워크플로로 돌아가기") { legacy = false }.buttonStyle(.bordered).padding(16) }
+                .overlay(alignment: .topLeading) { Button("노드 워크플로로 돌아가기") { legacy = false }.studioActionButton().padding(16) }
         } else {
             GeometryReader { geometry in
                 ZStack(alignment: .topLeading) {
@@ -154,8 +154,8 @@ struct WorkflowCanvasView: View {
     func toolbar(size: CGSize) -> some View {
         HStack(spacing: 12) {
             Menu {
-                Button("공통 프롬프트") { add(.prompt, size: size) }
-                Button("생성 단계") { add(.generation, size: size) }
+                Button { add(.prompt, size: size) } label: { Label("공통 프롬프트", systemImage: "text.alignleft") }
+                Button { add(.generation, size: size) } label: { Label("생성 단계", systemImage: "sparkles") }
                 Button("참조 이미지 가져오기…") { importReference(size: size) }
                 Button("프로젝트 이미지에서 선택…") { showAssets = true }
             } label: { Label("노드 추가", systemImage: "plus") }.disabled(busy).accessibilityIdentifier("workflow-add")
@@ -178,9 +178,9 @@ struct WorkflowCanvasView: View {
     }
     func navigation(size: CGSize) -> some View {
         HStack(spacing: 10) {
-            Button { zoom(0.8, size: size); saveViewport() } label: { Image(systemName: "minus.magnifyingglass") }
+            Button { zoom(0.8, size: size); saveViewport() } label: { Image(systemName: "minus.magnifyingglass").frame(width: 32, height: 32) }
             Text("\(Int(viewport.scale * 100))%").monospacedDigit().frame(width: 40)
-            Button { zoom(1.25, size: size); saveViewport() } label: { Image(systemName: "plus.magnifyingglass") }
+            Button { zoom(1.25, size: size); saveViewport() } label: { Image(systemName: "plus.magnifyingglass").frame(width: 32, height: 32) }
             Divider().frame(height: 16)
             Button("전체 보기") { fit(size) }.accessibilityIdentifier("workflow-fit")
             if connecting != nil { Text("연결할 입력을 클릭하세요").foregroundStyle(Color.accentColor); Button("취소") { connecting = nil } }
@@ -197,8 +197,8 @@ struct WorkflowCanvasView: View {
             Text("공통 지시와 참조를 연결하고, 결과를 골라 새 방향으로 분기하세요. 각 단계의 설정과 생성 기록은 이곳에 남습니다.")
                 .font(StudioTypography.body).foregroundStyle(.secondary).lineSpacing(4).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 12) {
-                Button("현재 설정으로 시작") { seed(branching: false); fit(size) }.buttonStyle(.borderedProminent).accessibilityIdentifier("workflow-seed")
-                Button("분기 워크플로 만들기") { seed(branching: true); fit(size) }.buttonStyle(.bordered)
+                Button("현재 설정으로 시작") { seed(branching: false); fit(size) }.studioActionButton(prominent: true).accessibilityIdentifier("workflow-seed")
+                Button("분기 워크플로 만들기") { seed(branching: true); fit(size) }.studioActionButton()
             }
             Text("이미지 파일을 캔버스에 놓으면 참조 노드가 됩니다.\n출력 점을 입력 점으로 드래그하거나 순서대로 클릭해 연결합니다.")
                 .font(StudioTypography.supporting).foregroundStyle(.secondary).lineSpacing(4)
@@ -253,7 +253,7 @@ struct WorkflowCanvasView: View {
                         try store.startWorkflow(project.id, only: runOnly); showRun = false
                         if nodes.contains(where: { $0.settings.mode != .sunburstAPI }), session.status != .ready { session.connect() }
                     } catch { showRun = false; store.report(error) }
-                }.buttonStyle(.borderedProminent).disabled(nodes.isEmpty || busy || (!paid.isEmpty && !store.apiConnection.ready)).accessibilityIdentifier("workflow-confirm-run")
+                }.studioActionButton(prominent: true).disabled(nodes.isEmpty || busy || (!paid.isEmpty && !store.apiConnection.ready)).accessibilityIdentifier("workflow-confirm-run")
             }
         }.padding(24).frame(width: 430)
             .sheet(isPresented: $showAPIConnection) { APIConnectionView() }

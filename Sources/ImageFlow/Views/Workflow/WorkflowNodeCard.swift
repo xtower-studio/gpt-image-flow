@@ -33,7 +33,7 @@ struct WorkflowNodeCard: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Image(systemName: "circle.grid.2x2.fill").foregroundStyle(.secondary)
+                Image(systemName: node.kind == .prompt ? "text.alignleft" : node.kind == .reference ? "photo" : "sparkles").foregroundStyle(.secondary)
                 Text(node.title).font(StudioTypography.control).lineLimit(1)
                 Spacer(minLength: 0)
                 Menu {
@@ -41,7 +41,7 @@ struct WorkflowNodeCard: View {
                     if node.kind == .generation { Button("결과에서 분기", action: branch).disabled(busy) }
                     Button("노드 삭제", role: .destructive, action: remove).disabled(busy)
                 } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-            }.padding(.horizontal, 14).frame(height: 38).background(.primary.opacity(0.035))
+            }.padding(.horizontal, 14).frame(height: 38)
                 .contentShape(Rectangle()).onTapGesture(perform: select)
                 .gesture(DragGesture(minimumDistance: 3).onChanged { move($0.translation, false) }.onEnded { move($0.translation, true) })
             if node.kind == .generation { Color.clear.frame(height: 52) }
@@ -50,9 +50,8 @@ struct WorkflowNodeCard: View {
                 VStack(alignment: .leading, spacing: 12) {
                     switch node.kind {
                     case .prompt:
-                        Text("연결된 단계에 공통으로 적용됩니다").font(StudioTypography.metadata).foregroundStyle(.secondary)
                         TextEditor(text: text).font(StudioTypography.body).scrollContentBackground(.hidden)
-                            .frame(height: 112).padding(8).panelSurface(radius: 8, editor: true).disabled(busy)
+                            .frame(height: 112).padding(8).panelSurface(radius: 12, editor: true).disabled(busy)
                             .accessibilityIdentifier("workflow-prompt-\(node.id)")
                     case .reference:
                         if let id = node.assetID, let asset = store.asset(id) {
@@ -75,9 +74,9 @@ struct WorkflowNodeCard: View {
                 }.font(StudioTypography.control).buttonStyle(.borderless).padding(12)
             }
         }.frame(width: Self.width, height: Self.height(node.kind))
-            .background(.background, in: RoundedRectangle(cornerRadius: 12))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? Color.accentColor : .primary.opacity(0.14), lineWidth: selected ? 2 : 1) }
+            .background(StudioPalette.field)
+            .studioContainer()
+            .overlay { RoundedRectangle(cornerRadius: StudioGeometry.contentRadius, style: .continuous).strokeBorder(selected ? Color.accentColor : .primary.opacity(0.14), lineWidth: selected ? 2 : 1) }
             .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
             .sheet(isPresented: $settings) {
                 WorkflowNodeSettings(projectID: projectID, nodeID: node.id).environment(store)
@@ -91,7 +90,7 @@ struct WorkflowNodeCard: View {
                 if !graph.edges.contains(where: { $0.target == node.id && $0.port == .prompt }) { Text("필수").font(StudioTypography.metadata).foregroundStyle(.secondary) }
             }
             TextEditor(text: text).font(StudioTypography.supporting).scrollContentBackground(.hidden)
-                .frame(height: 54).padding(6).panelSurface(radius: 8, editor: true).disabled(busy)
+                .frame(height: 54).padding(6).panelSurface(radius: 12, editor: true).disabled(busy)
                 .accessibilityIdentifier("workflow-instruction-\(node.id)")
             HStack {
                 Text("\(node.settings.mode == .sunburstAPI ? ImageAPIModel.label(node.settings.api.model) : node.settings.mode.label) · \(node.settings.imageCount)장")
@@ -154,8 +153,9 @@ struct WorkflowNodeCard: View {
                     }
                 }.padding(2)
             }
-            Text(job.results.count > 1 && node.selectedAssetID == nil ? "아래 후보를 클릭해 다음 단계에 사용할 이미지를 고르세요" : "선택한 이미지를 연결된 단계에 전달합니다")
-                .font(StudioTypography.metadata).foregroundStyle(node.selectedAssetID == nil && job.results.count > 1 ? Color.accentColor : .secondary)
+            if job.results.count > 1 && node.selectedAssetID == nil {
+                Text("다음 단계에 사용할 이미지를 선택하세요").font(StudioTypography.supporting).foregroundStyle(Color.accentColor)
+            }
         }
     }
 }

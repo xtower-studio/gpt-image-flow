@@ -22,13 +22,13 @@ struct ComposerInputCard: View {
                         .padding(.horizontal, 14).padding(.top, 16).allowsHitTesting(false)
                 }
                 DropTextEditor(text: $text, onFiles: importFiles, onFocusChanged: { focused = $0 }, acceptsFileDrops: true, onFileDragChanged: { editorDropTarget = $0 }, focusRequest: focusRequest)
-                    .frame(height: 96).padding(8).accessibilityLabel("이미지 프롬프트")
+                    .frame(height: 112).padding(8).accessibilityLabel("이미지 프롬프트")
             }
             Divider().padding(.horizontal, 14)
             referenceStrip
         }.panelSurface(editor: true)
-            .contentShape(RoundedRectangle(cornerRadius: 18))
-            .overlay { RoundedRectangle(cornerRadius: 18).strokeBorder(dropTarget || editorDropTarget ? Color.accentColor : focused ? Color.accentColor.opacity(0.65) : .clear, lineWidth: 1.5).allowsHitTesting(false) }
+            .contentShape(RoundedRectangle(cornerRadius: StudioGeometry.fieldRadius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: StudioGeometry.fieldRadius, style: .continuous).strokeBorder(dropTarget || editorDropTarget ? Color.accentColor : focused ? Color.accentColor.opacity(0.65) : .clear, lineWidth: 1.5).allowsHitTesting(false) }
             .dropDestination(for: URL.self) { urls, _ in
                 let files = urls.filter(\.isFileURL)
                 guard !files.isEmpty else { return false }; importFiles(files); return true
@@ -38,11 +38,11 @@ struct ComposerInputCard: View {
         VStack(alignment: .leading, spacing: PanelSpacing.related) {
             HStack(spacing: 8) {
                 Image(systemName: "paperclip").font(.system(size: 14))
-                Text("참조 이미지").font(StudioTypography.control).foregroundStyle(.primary)
+                Text("참조").font(StudioTypography.control).foregroundStyle(.primary)
                 if !references.isEmpty { Text("\(references.count)개").font(StudioTypography.metadata).foregroundStyle(.secondary) }
                 Spacer(minLength: 0)
                 Button(action: add) { Image(systemName: "plus").font(.system(size: 14, weight: .medium)).frame(width: 32, height: 32).contentShape(Circle()) }
-                    .buttonStyle(.plain).help("참조 이미지 추가 · ⌘O").accessibilityLabel("참조 이미지 추가")
+                    .buttonStyle(.borderless).help("참조 이미지 추가 · ⌘O").accessibilityLabel("참조 이미지 추가")
             }.foregroundStyle(.secondary)
             if !references.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -62,7 +62,7 @@ struct ComposerInputCard: View {
                     }
                 }
             } else {
-                Button("이미지를 여기에 놓으세요", action: add)
+                Button("이미지를 놓거나 추가하세요", action: add)
                     .font(StudioTypography.supporting).foregroundStyle(.secondary).buttonStyle(.plain)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }

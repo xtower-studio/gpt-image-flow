@@ -15,8 +15,8 @@ struct GenerationPlaceholder: View {
             Text(job.state.label).font(compact ? StudioTypography.metadata : StudioTypography.control)
             Text(job.imageTitle(ordinal - 1)).font(StudioTypography.metadata).monospacedDigit().foregroundStyle(.secondary)
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.accentColor.opacity(0.035), in: RoundedRectangle(cornerRadius: 14))
-            .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(Color.accentColor.opacity(0.2), style: StrokeStyle(lineWidth: 1, dash: [5, 5])) }
+            .background(Color.accentColor.opacity(0.035)).studioContainer()
+            .overlay { RoundedRectangle(cornerRadius: StudioGeometry.contentRadius, style: .continuous).strokeBorder(Color.accentColor.opacity(0.2), style: StrokeStyle(lineWidth: 1, dash: [5, 5])) }
             .accessibilityLabel("\(job.label), 이미지 \(ordinal)/\(job.expectedImageCount), \(job.state.label)")
     }
 }
@@ -24,6 +24,7 @@ struct GenerationPlaceholder: View {
 final class GenerationCollectionItem: NSCollectionViewItem {
     static let identifier = NSUserInterfaceItemIdentifier("GenerationCell")
     private var host: NSHostingView<AnyView>?
+    func endDisplaying() { host?.rootView = AnyView(EmptyView()) }
     override func loadView() { view = NSView() }
     func render(job: Job, ordinal: Int, phase: ScenePhase, open: @escaping () -> Void) {
         let content = AnyView(Button(action: open) {

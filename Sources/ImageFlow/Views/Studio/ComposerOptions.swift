@@ -29,7 +29,7 @@ struct ComposerOptions: View {
                 }.accessibilityIdentifier("composer-background")
                 OutputDivider()
                 OutputQuantityRow(title: "요청 횟수", value: $count, maximum: 50, locked: countLocked)
-            }.padding(.vertical, 4).frame(maxWidth: .infinity).panelSurface(radius: 12)
+            }.padding(.vertical, 4).frame(maxWidth: .infinity).panelSurface()
         }
     }
 }

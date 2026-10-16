@@ -27,9 +27,8 @@ struct WorkspaceSidebar: View {
                     }
                 }
             }.listStyle(.sidebar)
-            VStack(spacing: 14) {
-                Button(action: addProject) { Label("새 프로젝트", systemImage: "plus").frame(maxWidth: .infinity) }.studioActionButton().buttonBorderShape(.capsule).controlSize(.large).help("새 프로젝트 · ⌘N")
-                Divider()
+            VStack(spacing: 12) {
+                Button(action: addProject) { Label("새 프로젝트", systemImage: "plus").frame(maxWidth: .infinity) }.buttonStyle(.borderless).controlSize(.large).help("새 프로젝트 · ⌘N")
                 HStack(spacing: 8) {
                     Circle().fill(session.status == .ready ? Color.green : Color.orange).frame(width: 6, height: 6)
                     VStack(alignment: .leading, spacing: 3) {
@@ -40,14 +39,14 @@ struct WorkspaceSidebar: View {
                     Menu {
                         Button("ChatGPT 연결 창 열기", action: session.connect)
                         SettingsLink { Text("설정…") }
-                    } label: { Image(systemName: "ellipsis.circle") }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().help("계정 및 설정")
+                    } label: { Image(systemName: "person.crop.circle") }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().help("계정 및 설정")
                 }
             }.padding(16)
         }
     }
     @ViewBuilder private func projectCover(_ project: Project) -> some View {
         if let asset = store.library.assets.last(where: { ($0.projectID == project.id || project.referenceIDs.contains($0.id)) && !(store.library.hiddenAssetIDs ?? []).contains($0.id) }) {
-            AssetPreview(url: store.vault.original(asset), fit: false).frame(width: 28, height: 28).clipped().clipShape(RoundedRectangle(cornerRadius: 5)).accessibilityHidden(true)
-        } else { Image(systemName: "folder").font(.system(size: 17)).foregroundStyle(.secondary).frame(width: 28, height: 28) }
+            AssetPreview(url: store.vault.original(asset), fit: false).frame(width: 30, height: 30).clipped().clipShape(RoundedRectangle(cornerRadius: 8)).accessibilityHidden(true)
+        } else { Image(systemName: "folder").font(.system(size: 17)).foregroundStyle(.secondary).frame(width: 30, height: 30) }
     }
 }

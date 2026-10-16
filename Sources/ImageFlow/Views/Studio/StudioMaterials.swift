@@ -31,7 +31,7 @@ private struct StudioGlassSurface: ViewModifier {
             content.background(Color(nsColor: .controlBackgroundColor), in: shape)
                 .overlay { shape.strokeBorder(.primary.opacity(contrast == .increased || previewContrast ? 0.5 : 0.18)) }
         } else if #available(macOS 26.0, *) {
-            content.glassEffect(.regular.interactive(interactive), in: shape)
+            content.glassEffect(.regular.interactive(interactive), in: ConcentricRectangle(corners: .concentric(minimum: .fixed(cornerRadius))))
         } else {
             content.background(.regularMaterial, in: shape)
                 .overlay { shape.strokeBorder(.primary.opacity(0.12)) }
@@ -40,7 +40,7 @@ private struct StudioGlassSurface: ViewModifier {
 }
 
 extension View {
-    func studioGlass(cornerRadius: CGFloat = 22, interactive: Bool = true) -> some View {
+    func studioGlass(cornerRadius: CGFloat = 18, interactive: Bool = true) -> some View {
         modifier(StudioGlassSurface(cornerRadius: cornerRadius, interactive: interactive))
     }
     @ViewBuilder func studioActionButton(prominent: Bool = false) -> some View {

@@ -40,7 +40,7 @@ struct APIOptionsView: View {
                     .accessibilityIdentifier("api-image-count")
                 OutputDivider()
                 OutputQuantityRow(title: "요청 횟수", value: $requests, maximum: 50, locked: countLocked)
-            }.padding(.vertical, 4).frame(maxWidth: .infinity).panelSurface(radius: 12)
+            }.padding(.vertical, 4).frame(maxWidth: .infinity).panelSurface()
             Button { advanced = true } label: { Label("모든 API 옵션…", systemImage: "slider.horizontal.3") }.buttonStyle(.borderless).font(StudioTypography.control)
         }.sheet(isPresented: $advanced) { APIAdvancedView(options: $options, projectID: projectID, references: references) }
             .sheet(isPresented: $connect) { APIConnectionView() }

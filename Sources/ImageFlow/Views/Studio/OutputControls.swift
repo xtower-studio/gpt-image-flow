@@ -11,11 +11,11 @@ struct OutputMenuRow<Choices: View>: View {
             HStack(spacing: 12) {
                 Text(title).foregroundStyle(.primary)
                 Spacer(minLength: 8)
-                Text(value).foregroundStyle(.primary).lineLimit(1)
+                Text(value).foregroundStyle(.secondary).lineLimit(1)
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 13, weight: .medium)).foregroundStyle(.secondary)
             }.font(StudioTypography.supporting)
-                .padding(.horizontal, horizontalInset).frame(minHeight: 40).contentShape(Rectangle())
+                .padding(.horizontal, horizontalInset).frame(minHeight: 44).contentShape(Rectangle())
         }.menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden)
             .frame(maxWidth: .infinity).accessibilityLabel(title).accessibilityValue(value)
     }
@@ -44,6 +44,6 @@ struct OutputQuantityRow: View {
                 Button { value = min(maximum, value + 1) } label: { Image(systemName: "plus").frame(width: 32, height: 32).contentShape(Rectangle()) }
                     .disabled(value >= maximum).accessibilityLabel(title + " 늘리기")
             }.buttonStyle(.plain).font(StudioTypography.supporting).disabled(locked)
-        }.padding(.horizontal, 12).frame(minHeight: 40)
+        }.padding(.horizontal, 12).frame(minHeight: 44)
     }
 }

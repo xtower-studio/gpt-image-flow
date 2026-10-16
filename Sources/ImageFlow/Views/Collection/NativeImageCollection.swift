@@ -12,6 +12,8 @@ struct NativeImageCollection: NSViewRepresentable {
     let store: WorkspaceStore
     let cardSize: Double
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.studioPreviewReduceTransparency) private var previewTransparency
+    @Environment(\.studioPreviewIncreaseContrast) private var previewContrast
     @Binding var selection: Set<UUID>
     var preview: ([Asset]) -> Void
     var edit: (Asset) -> Void
@@ -23,8 +25,10 @@ struct NativeImageCollection: NSViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeNSView(context: Context) -> NSScrollView {
         let scroll = NSScrollView()
+        scroll.contentView.clipsToBounds = true
         scroll.drawsBackground = false; scroll.hasVerticalScroller = true; scroll.autohidesScrollers = true
         let collection = ImageCollectionView()
+        collection.clipsToBounds = true
         collection.backgroundColors = [.clear]; collection.isSelectable = true
         collection.allowsMultipleSelection = true; collection.allowsEmptySelection = true
         collection.dataSource = context.coordinator; collection.delegate = context.coordinator
@@ -49,6 +53,7 @@ struct NativeImageCollection: NSViewRepresentable {
         let nextSlots = slots
         let changed = coordinator.slots != nextSlots
         let phaseChanged = coordinator.phase != scenePhase
+        let appearanceChanged = coordinator.parent.previewTransparency != previewTransparency || coordinator.parent.previewContrast != previewContrast
         coordinator.parent = self; coordinator.slots = nextSlots; coordinator.phase = scenePhase
         guard let collection = scroll.documentView as? ImageCollectionView else { return }
         configure(collection, coordinator: coordinator)
@@ -57,7 +62,7 @@ struct NativeImageCollection: NSViewRepresentable {
         let indexes = Set(nextSlots.enumerated().filter { $0.element.asset.map { selection.contains($0.id) } ?? false }.map { IndexPath(item: $0.offset, section: 0) })
         let selectionChanged = collection.selectionIndexPaths != indexes
         if selectionChanged { collection.selectionIndexPaths = indexes }
-        if changed || selectionChanged {
+        if changed || selectionChanged || appearanceChanged {
             for item in collection.visibleItems() { if let item = item as? ImageCollectionItem, let path = collection.indexPath(for: item) { coordinator.configure(item, at: path) } }
         }
         if phaseChanged {
@@ -99,8 +104,20 @@ struct NativeImageCollection: NSViewRepresentable {
                 collection.selectionIndexPaths = [IndexPath(item: index, section: 0)]
                 collection.window?.makeFirstResponder(collection); self.changed()
             }
-            item.render(asset: asset, store: parent.store, selected: collection?.selectionIndexPaths.contains(path) == true,
+            item.render(asset: asset, store: parent.store, previewTransparency: parent.previewTransparency, previewContrast: parent.previewContrast, selected: collection?.selectionIndexPaths.contains(path) == true,
                         edit: { [weak self] in self?.parent.edit(asset) }, attach: { [weak self] in self?.parent.attach(asset) }, rename: { [weak self] in self?.parent.rename(asset) })
+        }
+        // AppKit can retain offscreen hosting views. Dispose their glass render layers
+        // when they leave the collection, and rebuild when the item reappears.
+        func collectionView(_ collectionView: NSCollectionView, didEndDisplaying item: NSCollectionViewItem, forRepresentedObjectAt indexPath: IndexPath) {
+            (item as? ImageCollectionItem)?.endDisplaying()
+            (item as? GenerationCollectionItem)?.endDisplaying()
+        }
+        func collectionView(_ collectionView: NSCollectionView, willDisplay item: NSCollectionViewItem, forRepresentedObjectAt indexPath: IndexPath) {
+            if let image = item as? ImageCollectionItem { configure(image, at: indexPath) }
+            else if let placeholder = item as? GenerationCollectionItem, slots.indices.contains(indexPath.item), let job = slots[indexPath.item].job {
+                placeholder.render(job: job, ordinal: slots[indexPath.item].ordinal, phase: phase) { [weak self] in self?.parent.openJob(job) }
+            }
         }
         func collectionView(_ collectionView: NSCollectionView, shouldSelectItemsAt indexPaths: Set<IndexPath>) -> Set<IndexPath> {
             Set(indexPaths.filter { slots.indices.contains($0.item) && slots[$0.item].asset != nil })
@@ -172,7 +189,7 @@ final class ImageCollectionView: NSCollectionView {
             let size = NSSize(width: width, height: width)
             if layout.itemSize != size {
                 layout.itemSize = size; layout.minimumInteritemSpacing = 18; layout.minimumLineSpacing = 18
-                layout.sectionInset = NSEdgeInsets(top: 20, left: 20, bottom: 24, right: 20); layout.invalidateLayout()
+                layout.sectionInset = NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20); layout.invalidateLayout()
             }
         }
         super.layout()
@@ -202,12 +219,15 @@ final class ImageCollectionItem: NSCollectionViewItem {
     }
     required init?(coder: NSCoder) { super.init(coder: coder) }
     var select: (() -> Void)? { didSet { (view as? CollectionItemContainer)?.select = select } }
+    func endDisplaying() { host?.rootView = AnyView(EmptyView()) }
     override func loadView() { view = CollectionItemContainer(); view.setAccessibilityElement(true); view.setAccessibilityRole(.button) }
-    func render(asset: Asset, store: WorkspaceStore, selected: Bool, edit: @escaping () -> Void, attach: @escaping () -> Void, rename: @escaping () -> Void) {
-        let content = CollectionImageCell(asset: asset, store: store, selected: selected, edit: edit, attach: attach, rename: rename)
+    func render(asset: Asset, store: WorkspaceStore, previewTransparency: Bool, previewContrast: Bool, selected: Bool, edit: @escaping () -> Void, attach: @escaping () -> Void, rename: @escaping () -> Void) {
+        let content = AnyView(CollectionImageCell(asset: asset, store: store, selected: selected, edit: edit, attach: attach, rename: rename)
+            .environment(\.studioPreviewReduceTransparency, previewTransparency)
+            .environment(\.studioPreviewIncreaseContrast, previewContrast))
         if let host { host.rootView = content }
         else {
-            let host = CollectionHostingView(rootView: content); host.translatesAutoresizingMaskIntoConstraints = false
+            let host = CollectionHostingView(rootView: content); host.translatesAutoresizingMaskIntoConstraints = false; host.clipsToBounds = true
             view.addSubview(host); NSLayoutConstraint.activate([host.leadingAnchor.constraint(equalTo: view.leadingAnchor),host.trailingAnchor.constraint(equalTo: view.trailingAnchor),host.topAnchor.constraint(equalTo: view.topAnchor),host.bottomAnchor.constraint(equalTo: view.bottomAnchor)])
             self.host = host
         }
@@ -230,13 +250,12 @@ struct CollectionImageCell: View {
 
 /// Only overlay controls consume SwiftUI events. The image itself retains native
 /// collection selection, multi-selection and dragging.
-final class CollectionHostingView: NSHostingView<CollectionImageCell> {
+final class CollectionHostingView: NSHostingView<AnyView> {
     override func hitTest(_ point: NSPoint) -> NSView? {
         let local = convert(point, from: superview)
         let y = isFlipped ? local.y : bounds.height - local.y
-        let tools = y < 44 && local.x >= bounds.width - 82
-        let name = y >= bounds.height - 36
-        guard tools || name else { return nil }
+        let tools = y >= bounds.height - 44 && y <= bounds.height - 8 && local.x >= 8 && local.x <= bounds.width - 8
+        guard tools else { return nil }
         return super.hitTest(point)
     }
 }

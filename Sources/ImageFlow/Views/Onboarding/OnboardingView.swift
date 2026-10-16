@@ -25,10 +25,10 @@ struct OnboardingView: View {
                 Spacer()
                 Text("DEAUM · 다음모양 배포\nDesigned & developed by xtower").font(StudioTypography.supporting).foregroundStyle(.secondary).lineSpacing(4)
                 Text("당신의 이미지와 작업 기록은\n당신의 폴더에 남습니다.").font(StudioTypography.supporting).foregroundStyle(.secondary).lineSpacing(4)
-            }.padding(30).frame(width: 265).background(.quaternary.opacity(0.35))
+            }.padding(30).frame(width: 265)
             VStack(alignment: .leading, spacing: 22) {
                 HStack { Text("시작하기 · \(step + 1) / 3").font(StudioTypography.metadata).foregroundStyle(.secondary); Spacer()
-                    Button { store.showOnboarding = false } label: { Image(systemName: "xmark") }.buttonStyle(.plain).help("나중에 설정에서 다시 열기").disabled(store.changingStorage)
+                    StudioIconButton(symbol: "xmark", label: "나중에 설정에서 다시 열기") { store.showOnboarding = false }.disabled(store.changingStorage)
                 }
                 if step == 0 { storage }
                 else if step == 1 { connections }
@@ -40,7 +40,7 @@ struct OnboardingView: View {
                     Spacer()
                     if store.changingStorage { ProgressView().controlSize(.small); Text("원본과 기록을 안전하게 복사하는 중…").font(StudioTypography.metadata) }
                     Button(step == 2 ? "작업 시작하기" : step == 0 ? "이 폴더 사용" : "계속") { advance() }
-                        .buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.defaultAction)
+                        .studioActionButton(prominent: true).controlSize(.large).keyboardShortcut(.defaultAction)
                         .disabled(store.changingStorage || store.restoringAssets || (step == 0 && !store.canChangeStorage))
                         .accessibilityIdentifier("onboarding-continue")
                 }

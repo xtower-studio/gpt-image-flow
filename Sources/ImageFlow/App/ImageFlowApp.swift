@@ -24,7 +24,7 @@ import SwiftUI
                     else { session.restore() }
                 }
         }
-        .defaultSize(width: 1280, height: 840)
+        .defaultSize(width: 1380, height: 900)
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified)
         .commands { StudioCommands(); BrandCommands() }

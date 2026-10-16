@@ -25,10 +25,9 @@ struct RecipeLibraryView: View {
             HStack {
                 Label("프롬프트 레시피", systemImage: "bookmark").font(.title2.weight(.semibold)); Spacer()
                 Button("현재 작업 저장", action: saveCurrent).accessibilityIdentifier("recipe-save-current")
-                Button { dismiss() } label: { Image(systemName: "xmark") }.buttonStyle(.plain).keyboardShortcut(.cancelAction)
+                StudioIconButton(symbol: "xmark", label: "레시피 닫기") { dismiss() }.keyboardShortcut(.cancelAction)
             }.padding(22)
-            Divider()
-            HStack(spacing: 0) {
+            NavigationSplitView {
                 VStack(spacing: 12) {
                     TextField("이름 또는 프롬프트 검색", text: $query).textFieldStyle(.roundedBorder).padding(.horizontal, 12).padding(.top, 14)
                     List(selection: $selection) {
@@ -36,8 +35,8 @@ struct RecipeLibraryView: View {
                         Section("시작 템플릿") { ForEach(filtered(RecipeTemplates.starters)) { recipe in row(recipe) } }
                     }.listStyle(.sidebar)
                     if let deleted { HStack { Text("레시피 삭제됨"); Button("되돌리기") { store.library.recipes?.append(deleted); store.flush(); self.deleted = nil } }.font(StudioTypography.metadata).padding(12) }
-                }.frame(width: 235)
-                Divider()
+                }.navigationSplitViewColumnWidth(min: 200, ideal: 235, max: 280)
+            } detail: {
                 VStack(alignment: .leading, spacing: 16) {
                     if let selected {
                         HStack {
@@ -53,7 +52,7 @@ struct RecipeLibraryView: View {
                                     TextEditor(text: $text).font(StudioTypography.body).scrollContentBackground(.hidden).frame(height: 170).padding(12).panelSurface(radius: 12, editor: true)
                                     Text("바꿔 쓸 부분을 {{제품}}처럼 적으면 적용할 때 입력할 수 있습니다.").font(StudioTypography.metadata).foregroundStyle(.secondary)
                                 } else {
-                                    Text(rendered).font(StudioTypography.body).lineSpacing(4).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading).padding(16).panelSurface(radius: 12)
+                                    Text(rendered).font(StudioTypography.body).lineSpacing(4).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading).padding(16).panelSurface()
                                     ForEach(RecipeTemplates.fields(in: text), id: \.self) { key in
                                         VStack(alignment: .leading, spacing: 5) { Text(key).font(StudioTypography.control); TextField(key + " 입력", text: Binding(get: { fields[key] ?? "" }, set: { fields[key] = $0 })).textFieldStyle(.roundedBorder) }
                                     }
@@ -74,7 +73,7 @@ struct RecipeLibraryView: View {
                                 var recipe = selected; recipe.settings.prompt = rendered
                                 store.applyRecipe(recipe, to: projectID, includeSettings: includeSettings, includeReferences: includeReferences)
                                 dismiss()
-                            }.buttonStyle(.borderedProminent).controlSize(.large).disabled(editing || !missing.isEmpty || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            }.studioActionButton(prominent: true).controlSize(.large).disabled(editing || !missing.isEmpty || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                                 .accessibilityIdentifier("recipe-apply")
                         }
                     } else { ContentUnavailableView("레시피를 선택하세요", systemImage: "bookmark", description: Text("현재 작업을 저장하거나 시작 템플릿을 골라 보세요.")) }

@@ -132,7 +132,7 @@ struct FreeCanvasView: View {
                 } else if let job = node.job {
                     Text("\(job.requestModeLabel) · \(job.expectedImageCount)장").font(StudioTypography.metadata).foregroundStyle(.secondary)
                 }
-            }.padding(.horizontal, 12).frame(height: 30).background(.quaternary.opacity(0.2)).contentShape(Rectangle())
+            }.padding(.horizontal, 12).frame(height: 30).contentShape(Rectangle())
                 .gesture(moveGesture(node))
             if let asset = node.asset {
                 AssetTile(asset: asset, selected: selection.contains(asset.id), preview: { preview(asset) }, edit: { edit(asset) }, attach: { store.attach(asset, to: project.id) }, compact: true)
@@ -144,14 +144,14 @@ struct FreeCanvasView: View {
                     if job.state.isRunning { ProgressView().controlSize(.small) }
                     Text(job.responseText ?? job.error ?? job.prompt).font(StudioTypography.body).lineLimit(8).textSelection(.enabled)
                     Spacer(minLength: 0)
-                    if job.state.needsAttention { Button(job.state == .responded ? "답변 보기 · 이어서 요청" : "상태 보기") { openJob(job) }.buttonStyle(.bordered) }
+                    if job.state.needsAttention { Button(job.state == .responded ? "답변 보기 · 이어서 요청" : "상태 보기") { openJob(job) }.studioActionButton() }
                     else { Text(job.label).font(StudioTypography.metadata).foregroundStyle(.secondary).lineLimit(1) }
                 }.padding(16).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
             Spacer(minLength: 0)
-        }.background(.background, in: RoundedRectangle(cornerRadius: 18))
-            .overlay { RoundedRectangle(cornerRadius: 18).stroke(selection.contains(node.id) ? Color.accentColor : Color.primary.opacity(0.13), lineWidth: selection.contains(node.id) ? 2 : 1) }
-            .clipShape(RoundedRectangle(cornerRadius: 18)).shadow(color: .black.opacity(0.08), radius: 6, y: 2)
+        }.background(StudioPalette.field)
+            .overlay { RoundedRectangle(cornerRadius: StudioGeometry.contentRadius, style: .continuous).stroke(selection.contains(node.id) ? Color.accentColor : Color.primary.opacity(0.13), lineWidth: selection.contains(node.id) ? 2 : 1) }
+            .studioContainer().shadow(color: .black.opacity(0.08), radius: 6, y: 2)
     }
     func moveGesture(_ node: Node) -> some Gesture {
         DragGesture(minimumDistance: 2).onChanged { value in

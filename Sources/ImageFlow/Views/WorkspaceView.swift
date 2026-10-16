@@ -45,7 +45,7 @@ struct WorkspaceView: View {
     var body: some View {
         NavigationSplitView {
             WorkspaceSidebar(selectedProject: $selectedProject, currentID: project?.id, onSelect: resetSelection, rename: { renameText = $0.name; renameTarget = .project($0) }, addProject: newProject)
-                .navigationSplitViewColumnWidth(min: 175, ideal: 200, max: 280)
+                .navigationSplitViewColumnWidth(min: 175, ideal: 220, max: 280)
         } detail: {
             StudioGlassGroup {
                 VStack(spacing: 0) {
@@ -61,13 +61,13 @@ struct WorkspaceView: View {
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
             .navigationTitle(project?.name ?? "프로젝트")
 
-            .searchable(text: $query, isPresented: $searchPresented, placement: .toolbar, prompt: "이미지 검색")
+
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Picker("보기 방식", selection: $boardMode) {
                         Label("컬렉션", systemImage: "square.grid.2x2").tag("grid")
                         Label("워크플로 캔버스", systemImage: "point.3.connected.trianglepath.dotted").tag("canvas")
-                    }.pickerStyle(.segmented).labelsHidden().frame(width: 76).help("컬렉션 ⌘1 · 캔버스 ⌘2")
+                    }.pickerStyle(.segmented).labelsHidden().frame(width: 88).help("컬렉션 ⌘1 · 캔버스 ⌘2")
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button { favoritesOnly.toggle() } label: { Label("후보만 보기", systemImage: favoritesOnly ? "star.fill" : "star") }.help("후보만 보기").tint(favoritesOnly ? .accentColor : nil)
@@ -83,10 +83,11 @@ struct WorkspaceView: View {
             .inspector(isPresented: $panelVisible) {
                 if let project {
                     StudioPanel(project: project, tab: $panel, editing: $editing, editPrompt: editPrompt, selectedAssets: selectedAssets, responseJobID: $responseJobID, focusRequest: focusRequest, edit: beginEdit, reuse: reuse)
-                        .id(project.id).inspectorColumnWidth(min: 300, ideal: 340, max: 430)
+                        .id(project.id).inspectorColumnWidth(min: 300, ideal: 360, max: 430)
                 }
             }
         }
+        .searchable(text: $query, isPresented: $searchPresented, placement: .toolbar, prompt: "이미지 검색")
         .focusedSceneValue(\.studioActions, actions)
         .sheet(isPresented: Binding(get: { comparison != nil }, set: { if !$0 { comparison = nil } })) {
             if let comparison { CompareView(assets: comparison, navigationAssets: assets).environment(store) }
@@ -156,8 +157,7 @@ struct WorkspaceView: View {
                     Button { store.dismissAttention(Set(attention.map(\.id))) } label: { Image(systemName: "xmark") }
                         .buttonStyle(.borderless).help("확인 알림 닫기 · 작업 기록은 유지됩니다").accessibilityLabel("확인 알림 닫기")
                 }
-            }.font(StudioTypography.supporting).padding(.horizontal, 20).frame(height: 36).background(.bar)
-            Divider()
+            }.font(StudioTypography.supporting).padding(.horizontal, 20).frame(minHeight: 40)
         }
     }
     private var footer: some View {
@@ -172,14 +172,14 @@ struct WorkspaceView: View {
                     Button { panel = .details; panelVisible = true } label: { Image(systemName: "info.circle") }.help("선택 정보")
                     Button { store.export(selectedAssets) } label: { Image(systemName: "square.and.arrow.up") }.help("내보내기 · ⇧⌘E")
                 }
-            }.padding(.horizontal, 16).frame(height: 36).studioGlass()
+            }.padding(.horizontal, 16).frame(height: 40).studioGlass()
             Spacer(minLength: 0)
             if boardMode == "grid" {
                 HStack(spacing: 10) {
                     Image(systemName: "photo").font(.system(size: 13)).foregroundStyle(.secondary)
-                    Slider(value: $cardSize, in: 170...320).frame(width: 80).controlSize(.small).accessibilityLabel("이미지 크기")
+                    Slider(value: $cardSize, in: 170...320, step: 25).frame(width: 80).controlSize(.small).accessibilityLabel("이미지 크기")
                     Image(systemName: "photo").font(.system(size: 15)).foregroundStyle(.secondary)
-                }.padding(.horizontal, 14).frame(height: 36).studioGlass()
+                }.padding(.horizontal, 14).frame(height: 40).studioGlass()
             }
         }.buttonStyle(.borderless).font(StudioTypography.supporting).padding(.horizontal, 16).padding(.vertical, 10)
     }
